@@ -1,0 +1,607 @@
+{% doc %}
+  @prompt
+    collection carousel,  allow selection of collections and a custom image for each view and show 3-5 per view. , I have total of 9 collections
+{% enddoc %}
+{% assign ai_gen_id = block.id | replace: '_', '' | downcase %}
+
+{% style %}
+  .ai-collection-carousel-{{ ai_gen_id }} {
+    width: {{ block.settings.desktop_width_percent }}%;
+    max-width: 100%;
+    display: block;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .ai-collection-carousel__wrapper-{{ ai_gen_id }} {
+    position: relative;
+    width: 100%;
+  }
+
+  .ai-collection-carousel__track-{{ ai_gen_id }} {
+    display: flex;
+    gap: {{ block.settings.gap }}px;
+    transition: transform 0.5s ease;
+    will-change: transform;
+  }
+
+  .ai-collection-carousel__slide-{{ ai_gen_id }} {
+    flex: 0 0 calc((100% - ({{ block.settings.slides_per_view_desktop | minus: 1 }} * {{ block.settings.gap }}px)) / {{ block.settings.slides_per_view_desktop }});
+    position: relative;
+    overflow: hidden;
+    border-radius: {{ block.settings.border_radius }}px;
+  }
+
+  @media screen and (max-width: 749px) {
+    .ai-collection-carousel__slide-{{ ai_gen_id }} {
+      flex: 0 0 calc((100% - ({{ block.settings.slides_per_view_mobile | minus: 1 }} * {{ block.settings.gap }}px)) / {{ block.settings.slides_per_view_mobile }});
+    }
+  }
+
+  .ai-collection-carousel__image-wrapper-{{ ai_gen_id }} {
+    position: relative;
+    width: 100%;
+    padding-bottom: {{ block.settings.image_aspect_ratio }}%;
+    overflow: hidden;
+  }
+
+  .ai-collection-carousel__image-{{ ai_gen_id }} {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .ai-collection-carousel__placeholder-{{ ai_gen_id }} {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #f4f4f4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ai-collection-carousel__placeholder-{{ ai_gen_id }} svg {
+    width: 60%;
+    height: 60%;
+    opacity: 0.3;
+  }
+
+  .ai-collection-carousel__overlay-{{ ai_gen_id }} {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,{{ block.settings.overlay_opacity }}) 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: {{ block.settings.content_padding }}px;
+    text-decoration: none;
+    transition: background 0.3s ease;
+  }
+
+  .ai-collection-carousel__overlay-{{ ai_gen_id }}:hover {
+    background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,{{ block.settings.overlay_opacity | plus: 0.2 }}) 100%);
+  }
+
+  .ai-collection-carousel__title-{{ ai_gen_id }} {
+    color: {{ block.settings.text_color }};
+    font-size: {{ block.settings.title_size }}px;
+    margin: 0 0 8px 0;
+    font-weight: 600;
+  }
+
+  .ai-collection-carousel__description-{{ ai_gen_id }} {
+    color: {{ block.settings.text_color }};
+    font-size: {{ block.settings.description_size }}px;
+    margin: 0;
+    opacity: 0.9;
+  }
+
+  .ai-collection-carousel__nav-{{ ai_gen_id }} {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: {{ block.settings.nav_spacing }}px;
+  }
+
+  .ai-collection-carousel__button-{{ ai_gen_id }} {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background-color: {{ block.settings.nav_button_color }};
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+  }
+
+  .ai-collection-carousel__button-{{ ai_gen_id }}:hover {
+    background-color: {{ block.settings.nav_button_hover_color }};
+    transform: scale(1.05);
+  }
+
+  .ai-collection-carousel__button-{{ ai_gen_id }}:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .ai-collection-carousel__button-{{ ai_gen_id }}:disabled:hover {
+    transform: scale(1);
+  }
+
+  .ai-collection-carousel__button-{{ ai_gen_id }} svg {
+    width: 20px;
+    height: 20px;
+    stroke: {{ block.settings.nav_icon_color }};
+    stroke-width: 2;
+  }
+
+  .ai-collection-carousel__empty-state-{{ ai_gen_id }} {
+    text-align: center;
+    padding: 60px 20px;
+    color: #666;
+    font-size: 14px;
+  }
+{% endstyle %}
+
+<collection-carousel-{{ ai_gen_id }} class="ai-collection-carousel-{{ ai_gen_id }}" {{ block.shopify_attributes }}>
+  {% liquid
+    assign has_collections = false
+    for i in (1..9)
+      assign collection_key = 'collection_' | append: i
+      assign collection = block.settings[collection_key]
+      if collection != blank
+        assign has_collections = true
+        break
+      endif
+    endfor
+  %}
+
+  {% if has_collections %}
+    <div class="ai-collection-carousel__wrapper-{{ ai_gen_id }}">
+      <div class="ai-collection-carousel__track-{{ ai_gen_id }}" data-track>
+        {% for i in (1..9) %}
+          {% liquid
+            assign collection_key = 'collection_' | append: i
+            assign image_key = 'custom_image_' | append: i
+            assign collection = block.settings[collection_key]
+            assign custom_image = block.settings[image_key]
+          %}
+
+          {% if collection != blank %}
+            <div class="ai-collection-carousel__slide-{{ ai_gen_id }}">
+              <div class="ai-collection-carousel__image-wrapper-{{ ai_gen_id }}">
+                {% if custom_image != blank %}
+                  <img
+                    src="{{ custom_image | image_url: width: 800 }}"
+                    alt="{{ custom_image.alt | escape }}"
+                    loading="lazy"
+                    width="{{ custom_image.width }}"
+                    height="{{ custom_image.height }}"
+                    class="ai-collection-carousel__image-{{ ai_gen_id }}"
+                  >
+                {% elsif collection.image != blank %}
+                  <img
+                    src="{{ collection.image | image_url: width: 800 }}"
+                    alt="{{ collection.image.alt | escape }}"
+                    loading="lazy"
+                    width="{{ collection.image.width }}"
+                    height="{{ collection.image.height }}"
+                    class="ai-collection-carousel__image-{{ ai_gen_id }}"
+                  >
+                {% else %}
+                  <div class="ai-collection-carousel__placeholder-{{ ai_gen_id }}">
+                    {{ 'collection-1' | placeholder_svg_tag }}
+                  </div>
+                {% endif %}
+
+                <a href="{{ collection.url }}" class="ai-collection-carousel__overlay-{{ ai_gen_id }}">
+                  {% if block.settings.show_title %}
+                    <h3 class="ai-collection-carousel__title-{{ ai_gen_id }}">{{ collection.title }}</h3>
+                  {% endif %}
+                  {% if block.settings.show_description and collection.description != blank %}
+                    <p class="ai-collection-carousel__description-{{ ai_gen_id }}">
+                      {{ collection.description | strip_html | truncate: 80 }}
+                    </p>
+                  {% endif %}
+                </a>
+              </div>
+            </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+
+    {% if block.settings.show_navigation %}
+      <div class="ai-collection-carousel__nav-{{ ai_gen_id }}">
+        <button
+          class="ai-collection-carousel__button-{{ ai_gen_id }}"
+          data-prev
+          aria-label="Previous slide"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+        <button
+          class="ai-collection-carousel__button-{{ ai_gen_id }}"
+          data-next
+          aria-label="Next slide"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
+      </div>
+    {% endif %}
+  {% else %}
+    <div class="ai-collection-carousel__empty-state-{{ ai_gen_id }}">
+      Next, select collections to display in the carousel
+    </div>
+  {% endif %}
+</collection-carousel-{{ ai_gen_id }}>
+
+<script>
+  (function() {
+    class CollectionCarousel{{ ai_gen_id }} extends HTMLElement {
+      constructor() {
+        super();
+        this.currentIndex = 0;
+        this.slidesPerView = {{ block.settings.slides_per_view_desktop }};
+        this.gap = {{ block.settings.gap }};
+      }
+
+      connectedCallback() {
+        this.track = this.querySelector('[data-track]');
+        this.prevButton = this.querySelector('[data-prev]');
+        this.nextButton = this.querySelector('[data-next]');
+
+        if (!this.track) return;
+
+        this.slides = Array.from(this.track.children);
+        this.totalSlides = this.slides.length;
+
+        this.updateSlidesPerView();
+        this.updateButtons();
+
+        if (this.prevButton && this.nextButton) {
+          this.prevButton.addEventListener('click', () => this.prev());
+          this.nextButton.addEventListener('click', () => this.next());
+        }
+
+        window.addEventListener('resize', () => this.handleResize());
+      }
+
+      updateSlidesPerView() {
+        if (window.innerWidth <= 749) {
+          this.slidesPerView = {{ block.settings.slides_per_view_mobile }};
+        } else {
+          this.slidesPerView = {{ block.settings.slides_per_view_desktop }};
+        }
+      }
+
+      handleResize() {
+        this.updateSlidesPerView();
+        this.currentIndex = Math.min(this.currentIndex, this.getMaxIndex());
+        this.updateCarousel();
+      }
+
+      getMaxIndex() {
+        return Math.max(0, this.totalSlides - this.slidesPerView);
+      }
+
+      prev() {
+        if (this.currentIndex > 0) {
+          this.currentIndex--;
+          this.updateCarousel();
+        }
+      }
+
+      next() {
+        if (this.currentIndex < this.getMaxIndex()) {
+          this.currentIndex++;
+          this.updateCarousel();
+        }
+      }
+
+      updateCarousel() {
+        const slideWidth = this.slides[0].offsetWidth;
+        const offset = -(this.currentIndex * (slideWidth + this.gap));
+        this.track.style.transform = `translateX(${offset}px)`;
+        this.updateButtons();
+      }
+
+      updateButtons() {
+        if (this.prevButton && this.nextButton) {
+          this.prevButton.disabled = this.currentIndex === 0;
+          this.nextButton.disabled = this.currentIndex >= this.getMaxIndex();
+        }
+      }
+    }
+
+    customElements.define('collection-carousel-{{ ai_gen_id }}', CollectionCarousel{{ ai_gen_id }});
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Collection carousel",
+  "tag": null,
+  "settings": [
+    {
+      "type": "header",
+      "content": "Collections"
+    },
+    {
+      "type": "collection",
+      "id": "collection_1",
+      "label": "Collection 1"
+    },
+    {
+      "type": "image_picker",
+      "id": "custom_image_1",
+      "label": "Custom image 1"
+    },
+    {
+      "type": "collection",
+      "id": "collection_2",
+      "label": "Collection 2"
+    },
+    {
+      "type": "image_picker",
+      "id": "custom_image_2",
+      "label": "Custom image 2"
+    },
+    {
+      "type": "collection",
+      "id": "collection_3",
+      "label": "Collection 3"
+    },
+    {
+      "type": "image_picker",
+      "id": "custom_image_3",
+      "label": "Custom image 3"
+    },
+    {
+      "type": "collection",
+      "id": "collection_4",
+      "label": "Collection 4"
+    },
+    {
+      "type": "image_picker",
+      "id": "custom_image_4",
+      "label": "Custom image 4"
+    },
+    {
+      "type": "collection",
+      "id": "collection_5",
+      "label": "Collection 5"
+    },
+    {
+      "type": "image_picker",
+      "id": "custom_image_5",
+      "label": "Custom image 5"
+    },
+    {
+      "type": "collection",
+      "id": "collection_6",
+      "label": "Collection 6"
+    },
+    {
+      "type": "image_picker",
+      "id": "custom_image_6",
+      "label": "Custom image 6"
+    },
+    {
+      "type": "collection",
+      "id": "collection_7",
+      "label": "Collection 7"
+    },
+    {
+      "type": "image_picker",
+      "id": "custom_image_7",
+      "label": "Custom image 7"
+    },
+    {
+      "type": "collection",
+      "id": "collection_8",
+      "label": "Collection 8"
+    },
+    {
+      "type": "image_picker",
+      "id": "custom_image_8",
+      "label": "Custom image 8"
+    },
+    {
+      "type": "collection",
+      "id": "collection_9",
+      "label": "Collection 9"
+    },
+    {
+      "type": "image_picker",
+      "id": "custom_image_9",
+      "label": "Custom image 9"
+    },
+    {
+      "type": "header",
+      "content": "Layout"
+    },
+    {
+      "type": "range",
+      "id": "slides_per_view_desktop",
+      "label": "Slides per view (desktop)",
+      "min": 3,
+      "max": 5,
+      "step": 1,
+      "default": 4
+    },
+    {
+      "type": "range",
+      "id": "slides_per_view_mobile",
+      "label": "Slides per view (mobile)",
+      "min": 1,
+      "max": 3,
+      "step": 1,
+      "default": 2
+    },
+    {
+      "type": "range",
+      "id": "gap",
+      "label": "Gap between slides",
+      "min": 0,
+      "max": 40,
+      "step": 4,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "desktop_width_percent",
+      "label": "Desktop width",
+      "min": 50,
+      "max": 100,
+      "step": 5,
+      "unit": "%",
+      "default": 100
+    },
+    {
+      "type": "header",
+      "content": "Image"
+    },
+    {
+      "type": "range",
+      "id": "image_aspect_ratio",
+      "label": "Aspect ratio",
+      "min": 50,
+      "max": 150,
+      "step": 5,
+      "unit": "%",
+      "default": 75
+    },
+    {
+      "type": "range",
+      "id": "border_radius",
+      "label": "Border radius",
+      "min": 0,
+      "max": 40,
+      "step": 4,
+      "unit": "px",
+      "default": 8
+    },
+    {
+      "type": "header",
+      "content": "Content"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_title",
+      "label": "Show collection title",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_description",
+      "label": "Show collection description",
+      "default": true
+    },
+    {
+      "type": "range",
+      "id": "title_size",
+      "label": "Title size",
+      "min": 14,
+      "max": 32,
+      "step": 2,
+      "unit": "px",
+      "default": 20
+    },
+    {
+      "type": "range",
+      "id": "description_size",
+      "label": "Description size",
+      "min": 12,
+      "max": 20,
+      "step": 1,
+      "unit": "px",
+      "default": 14
+    },
+    {
+      "type": "range",
+      "id": "content_padding",
+      "label": "Content padding",
+      "min": 12,
+      "max": 40,
+      "step": 4,
+      "unit": "px",
+      "default": 20
+    },
+    {
+      "type": "range",
+      "id": "overlay_opacity",
+      "label": "Overlay opacity",
+      "min": 0,
+      "max": 1,
+      "step": 0.1,
+      "default": 0.5
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "header",
+      "content": "Navigation"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_navigation",
+      "label": "Show navigation buttons",
+      "default": true
+    },
+    {
+      "type": "range",
+      "id": "nav_spacing",
+      "label": "Navigation spacing",
+      "min": 12,
+      "max": 40,
+      "step": 4,
+      "unit": "px",
+      "default": 24
+    },
+    {
+      "type": "color",
+      "id": "nav_button_color",
+      "label": "Button background",
+      "default": "#b29964"
+    },
+    {
+      "type": "color",
+      "id": "nav_button_hover_color",
+      "label": "Button hover background",
+      "default": "#9a8456"
+    },
+    {
+      "type": "color",
+      "id": "nav_icon_color",
+      "label": "Icon color",
+      "default": "#ffffff"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Collection carousel"
+    }
+  ]
+}
+{% endschema %}

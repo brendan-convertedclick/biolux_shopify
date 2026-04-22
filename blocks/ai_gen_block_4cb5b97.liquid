@@ -1,0 +1,995 @@
+{% doc %}
+  @prompt
+    Create a pre-checkout eligibility form with a one-question-at-a-time view (step-by-step format). The form should include these questions in order:
+    
+    1. Full name, DOB, ID/passport (grouped together in one step)
+    2. Current health status (radio buttons)
+    3. Medical conditions (multi-select with "None" as exclusive option)
+    4. Medications/allergies (short text input)
+    5. Main goal (radio buttons: weight, anti-aging, gut, energy, injury, immune, other)
+    6. Pregnancy/breastfeeding (Yes/No radio buttons)
+    7. "Have you ever had a serious reaction to any peptide, hormone or weight-loss injection?" (Yes/No radio buttons)
+    8. Consent checkbox (required): "I confirm my information is true and I consent to doctor review."
+    
+    The form should display one question per screen with Next/Previous navigation buttons, show progress indicator, validate required fields before allowing progression, and have a clean, professional medical form design.
+{% enddoc %}
+{% assign ai_gen_id = block.id | replace: '_', '' | downcase %}
+
+{% style %}
+  .ai-eligibility-form-{{ ai_gen_id }} {
+    display: block;
+    width: {{ block.settings.desktop_width_percent }}%;
+    max-width: 100%;
+    margin: 0 auto;
+    background-color: {{ block.settings.background_color }};
+    border-radius: {{ block.settings.border_radius }}px;
+    padding: 40px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .ai-eligibility-form__progress-{{ ai_gen_id }} {
+    margin-bottom: 30px;
+  }
+
+  .ai-eligibility-form__progress-bar-{{ ai_gen_id }} {
+    width: 100%;
+    height: 8px;
+    background-color: {{ block.settings.progress_bg_color }};
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .ai-eligibility-form__progress-fill-{{ ai_gen_id }} {
+    height: 100%;
+    background-color: {{ block.settings.progress_fill_color }};
+    transition: width 0.3s ease;
+  }
+
+  .ai-eligibility-form__progress-text-{{ ai_gen_id }} {
+    margin-top: 10px;
+    font-size: 14px;
+    color: {{ block.settings.text_color }};
+    text-align: center;
+  }
+
+  .ai-eligibility-form__step-{{ ai_gen_id }} {
+    display: none;
+  }
+
+  .ai-eligibility-form__step-{{ ai_gen_id }}.active {
+    display: block;
+  }
+
+  .ai-eligibility-form__question-{{ ai_gen_id }} {
+    margin-bottom: 24px;
+  }
+
+  .ai-eligibility-form__label-{{ ai_gen_id }} {
+    display: block;
+    font-size: {{ block.settings.label_font_size }}px;
+    font-weight: 600;
+    color: {{ block.settings.text_color }};
+    margin-bottom: 12px;
+  }
+
+  .ai-eligibility-form__input-{{ ai_gen_id }} {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid {{ block.settings.input_border_color }};
+    border-radius: {{ block.settings.input_border_radius }}px;
+    font-size: 14px;
+    color: {{ block.settings.text_color }};
+    background-color: {{ block.settings.input_bg_color }};
+  }
+
+  .ai-eligibility-form__input-{{ ai_gen_id }}:focus {
+    outline: none;
+    border-color: {{ block.settings.primary_color }};
+  }
+
+  .ai-eligibility-form__input-group-{{ ai_gen_id }} {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .ai-eligibility-form__radio-group-{{ ai_gen_id }},
+  .ai-eligibility-form__checkbox-group-{{ ai_gen_id }} {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .ai-eligibility-form__radio-option-{{ ai_gen_id }},
+  .ai-eligibility-form__checkbox-option-{{ ai_gen_id }} {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    border: 1px solid {{ block.settings.input_border_color }};
+    border-radius: {{ block.settings.input_border_radius }}px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .ai-eligibility-form__radio-option-{{ ai_gen_id }}:hover,
+  .ai-eligibility-form__checkbox-option-{{ ai_gen_id }}:hover {
+    border-color: {{ block.settings.primary_color }};
+    background-color: {{ block.settings.option_hover_bg }};
+  }
+
+  .ai-eligibility-form__radio-option-{{ ai_gen_id }} input[type="radio"],
+  .ai-eligibility-form__checkbox-option-{{ ai_gen_id }} input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+  }
+
+  .ai-eligibility-form__radio-option-{{ ai_gen_id }} label,
+  .ai-eligibility-form__checkbox-option-{{ ai_gen_id }} label {
+    flex: 1;
+    cursor: pointer;
+    font-size: 14px;
+    color: {{ block.settings.text_color }};
+  }
+
+  .ai-eligibility-form__consent-{{ ai_gen_id }} {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 16px;
+    background-color: {{ block.settings.consent_bg_color }};
+    border-radius: {{ block.settings.input_border_radius }}px;
+    border: 1px solid {{ block.settings.input_border_color }};
+  }
+
+  .ai-eligibility-form__consent-{{ ai_gen_id }} input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    margin-top: 2px;
+    cursor: pointer;
+  }
+
+  .ai-eligibility-form__consent-{{ ai_gen_id }} label {
+    flex: 1;
+    font-size: 14px;
+    color: {{ block.settings.text_color }};
+    cursor: pointer;
+  }
+
+  .ai-eligibility-form__navigation-{{ ai_gen_id }} {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 32px;
+  }
+
+  .ai-eligibility-form__button-{{ ai_gen_id }} {
+    padding: 14px 28px;
+    border: none;
+    border-radius: {{ block.settings.button_border_radius }}px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .ai-eligibility-form__button-{{ ai_gen_id }}:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .ai-eligibility-form__button--previous-{{ ai_gen_id }} {
+    background-color: {{ block.settings.secondary_button_bg }};
+    color: {{ block.settings.secondary_button_text }};
+  }
+
+  .ai-eligibility-form__button--previous-{{ ai_gen_id }}:hover:not(:disabled) {
+    background-color: {{ block.settings.secondary_button_hover }};
+  }
+
+  .ai-eligibility-form__button--next-{{ ai_gen_id }},
+  .ai-eligibility-form__button--submit-{{ ai_gen_id }} {
+    background-color: {{ block.settings.primary_color }};
+    color: {{ block.settings.primary_button_text }};
+  }
+
+  .ai-eligibility-form__button--next-{{ ai_gen_id }}:hover:not(:disabled),
+  .ai-eligibility-form__button--submit-{{ ai_gen_id }}:hover:not(:disabled) {
+    background-color: {{ block.settings.primary_button_hover }};
+  }
+
+  .ai-eligibility-form__error-{{ ai_gen_id }} {
+    color: {{ block.settings.error_color }};
+    font-size: 14px;
+    margin-top: 8px;
+    display: none;
+  }
+
+  .ai-eligibility-form__error-{{ ai_gen_id }}.visible {
+    display: block;
+  }
+
+  .ai-eligibility-form__success-{{ ai_gen_id }} {
+    display: none;
+    text-align: center;
+    padding: 40px;
+  }
+
+  .ai-eligibility-form__success-{{ ai_gen_id }}.visible {
+    display: block;
+  }
+
+  .ai-eligibility-form__success-icon-{{ ai_gen_id }} {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 20px;
+    color: {{ block.settings.success_color }};
+  }
+
+  .ai-eligibility-form__success-title-{{ ai_gen_id }} {
+    font-size: 24px;
+    font-weight: 600;
+    color: {{ block.settings.text_color }};
+    margin-bottom: 12px;
+  }
+
+  .ai-eligibility-form__success-message-{{ ai_gen_id }} {
+    font-size: 16px;
+    color: {{ block.settings.text_color }};
+  }
+
+  @media screen and (max-width: 749px) {
+    .ai-eligibility-form-{{ ai_gen_id }} {
+      padding: 24px;
+    }
+
+    .ai-eligibility-form__navigation-{{ ai_gen_id }} {
+      flex-direction: column;
+    }
+
+    .ai-eligibility-form__button-{{ ai_gen_id }} {
+      width: 100%;
+    }
+  }
+{% endstyle %}
+
+<eligibility-form-{{ ai_gen_id }} class="ai-eligibility-form-{{ ai_gen_id }}" {{ block.shopify_attributes }}>
+  <div class="ai-eligibility-form__progress-{{ ai_gen_id }}">
+    <div class="ai-eligibility-form__progress-bar-{{ ai_gen_id }}">
+      <div class="ai-eligibility-form__progress-fill-{{ ai_gen_id }}" data-progress-fill></div>
+    </div>
+    <div class="ai-eligibility-form__progress-text-{{ ai_gen_id }}" data-progress-text>Step 1 of 8</div>
+  </div>
+
+  {%- form 'contact' -%}
+    <input type="hidden" name="contact[form_type]" value="eligibility_form">
+
+    <div class="ai-eligibility-form__steps-{{ ai_gen_id }}" data-steps-container>
+      <div class="ai-eligibility-form__step-{{ ai_gen_id }} active" data-step="1">
+        <div class="ai-eligibility-form__question-{{ ai_gen_id }}">
+          <label class="ai-eligibility-form__label-{{ ai_gen_id }}" for="full_name_{{ ai_gen_id }}">
+            Full name <span style="color: {{ block.settings.error_color }};">*</span>
+          </label>
+          <input
+            type="text"
+            id="full_name_{{ ai_gen_id }}"
+            name="contact[full_name]"
+            class="ai-eligibility-form__input-{{ ai_gen_id }}"
+            required
+            data-required
+          >
+          <div class="ai-eligibility-form__error-{{ ai_gen_id }}" data-error>This field is required</div>
+        </div>
+
+        <div class="ai-eligibility-form__question-{{ ai_gen_id }}">
+          <label class="ai-eligibility-form__label-{{ ai_gen_id }}" for="dob_{{ ai_gen_id }}">
+            Date of birth <span style="color: {{ block.settings.error_color }};">*</span>
+          </label>
+          <input
+            type="text"
+            id="dob_{{ ai_gen_id }}"
+            name="contact[date_of_birth]"
+            class="ai-eligibility-form__input-{{ ai_gen_id }}"
+            placeholder="DD/MM/YYYY"
+            required
+            data-required
+          >
+          <div class="ai-eligibility-form__error-{{ ai_gen_id }}" data-error>This field is required</div>
+        </div>
+
+        <div class="ai-eligibility-form__question-{{ ai_gen_id }}">
+          <label class="ai-eligibility-form__label-{{ ai_gen_id }}" for="id_passport_{{ ai_gen_id }}">
+            ID/Passport number <span style="color: {{ block.settings.error_color }};">*</span>
+          </label>
+          <input
+            type="text"
+            id="id_passport_{{ ai_gen_id }}"
+            name="contact[id_passport]"
+            class="ai-eligibility-form__input-{{ ai_gen_id }}"
+            required
+            data-required
+          >
+          <div class="ai-eligibility-form__error-{{ ai_gen_id }}" data-error>This field is required</div>
+        </div>
+      </div>
+
+      <div class="ai-eligibility-form__step-{{ ai_gen_id }}" data-step="2">
+        <div class="ai-eligibility-form__question-{{ ai_gen_id }}">
+          <label class="ai-eligibility-form__label-{{ ai_gen_id }}">
+            Current health status <span style="color: {{ block.settings.error_color }};">*</span>
+          </label>
+          <div class="ai-eligibility-form__radio-group-{{ ai_gen_id }}">
+            <div class="ai-eligibility-form__radio-option-{{ ai_gen_id }}">
+              <input
+                type="radio"
+                id="health_excellent_{{ ai_gen_id }}"
+                name="contact[health_status]"
+                value="Excellent"
+                required
+                data-required
+              >
+              <label for="health_excellent_{{ ai_gen_id }}">Excellent</label>
+            </div>
+            <div class="ai-eligibility-form__radio-option-{{ ai_gen_id }}">
+              <input
+                type="radio"
+                id="health_good_{{ ai_gen_id }}"
+                name="contact[health_status]"
+                value="Good"
+              >
+              <label for="health_good_{{ ai_gen_id }}">Good</label>
+            </div>
+            <div class="ai-eligibility-form__radio-option-{{ ai_gen_id }}">
+              <input
+                type="radio"
+                id="health_fair_{{ ai_gen_id }}"
+                name="contact[health_status]"
+                value="Fair"
+              >
+              <label for="health_fair_{{ ai_gen_id }}">Fair</label>
+            </div>
+            <div class="ai-eligibility-form__radio-option-{{ ai_gen_id }}">
+              <input
+                type="radio"
+                id="health_poor_{{ ai_gen_id }}"
+                name="contact[health_status]"
+                value="Poor"
+              >
+              <label for="health_poor_{{ ai_gen_id }}">Poor</label>
+            </div>
+          </div>
+          <div class="ai-eligibility-form__error-{{ ai_gen_id }}" data-error>Please select an option</div>
+        </div>
+      </div>
+
+      <div class="ai-eligibility-form__step-{{ ai_gen_id }}" data-step="3">
+        <div class="ai-eligibility-form__question-{{ ai_gen_id }}">
+          <label class="ai-eligibility-form__label-{{ ai_gen_id }}">
+            Medical conditions <span style="color: {{ block.settings.error_color }};">*</span>
+          </label>
+          <div class="ai-eligibility-form__checkbox-group-{{ ai_gen_id }}" data-medical-conditions>
+            <div class="ai-eligibility-form__checkbox-option-{{ ai_gen_id }}">
+              <input
+                type="checkbox"
+                id="condition_none_{{ ai_gen_id }}"
+                name="contact[medical_conditions][]"
+                value="None"
+                data-exclusive
+              >
+              <label for="condition_none_{{ ai_gen_id }}">None</label>
+            </div>
+            <div class="ai-eligibility-form__checkbox-option-{{ ai_gen_id }}">
+              <input
+                type="checkbox"
+                id="condition_diabetes_{{ ai_gen_id }}"
+                name="contact[medical_conditions][]"
+                value="Diabetes"
+              >
+              <label for="condition_diabetes_{{ ai_gen_id }}">Diabetes</label>
+            </div>
+            <div class="ai-eligibility-form__checkbox-option-{{ ai_gen_id }}">
+              <input
+                type="checkbox"
+                id="condition_hypertension_{{ ai_gen_id }}"
+                name="contact[medical_conditions][]"
+                value="Hypertension"
+              >
+              <label for="condition_hypertension_{{ ai_gen_id }}">Hypertension</label>
+            </div>
+            <div class="ai-eligibility-form__checkbox-option-{{ ai_gen_id }}">
+              <input
+                type="checkbox"
+                id="condition_heart_{{ ai_gen_id }}"
+                name="contact[medical_conditions][]"
+                value="Heart disease"
+              >
+              <label for="condition_heart_{{ ai_gen_id }}">Heart disease</label>
+            </div>
+            <div class="ai-eligibility-form__checkbox-option-{{ ai_gen_id }}">
+              <input
+                type="checkbox"
+                id="condition_thyroid_{{ ai_gen_id }}"
+                name="contact[medical_conditions][]"
+                value="Thyroid disorder"
+              >
+              <label for="condition_thyroid_{{ ai_gen_id }}">Thyroid disorder</label>
+            </div>
+            <div class="ai-eligibility-form__checkbox-option-{{ ai_gen_id }}">
+              <input
+                type="checkbox"
+                id="condition_other_{{ ai_gen_id }}"
+                name="contact[medical_conditions][]"
+                value="Other"
+              >
+              <label for="condition_other_{{ ai_gen_id }}">Other</label>
+            </div>
+          </div>
+          <div class="ai-eligibility-form__error-{{ ai_gen_id }}" data-error>Please select at least one option</div>
+        </div>
+      </div>
+
+      <div class="ai-eligibility-form__step-{{ ai_gen_id }}" data-step="4">
+        <div class="ai-eligibility-form__question-{{ ai_gen_id }}">
+          <label class="ai-eligibility-form__label-{{ ai_gen_id }}" for="medications_{{ ai_gen_id }}">
+            Current medications and allergies
+          </label>
+          <textarea
+            id="medications_{{ ai_gen_id }}"
+            name="contact[medications_allergies]"
+            class="ai-eligibility-form__input-{{ ai_gen_id }}"
+            rows="4"
+            placeholder="Please list any current medications and known allergies"
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="ai-eligibility-form__step-{{ ai_gen_id }}" data-step="5">
+        <div class="ai-eligibility-form__question-{{ ai_gen_id }}">
+          <label class="ai-eligibility-form__label-{{ ai_gen_id }}">
+            What is your main health goal? <span style="color: {{ block.settings.error_color }};">*</span>
+          </label>
+          <div class="ai-eligibility-form__radio-group-{{ ai_gen_id }}">
+            <div class="ai-eligibility-form__radio-option-{{ ai_gen_id }}">
+              <input
+                type="radio"
+                id="goal_weight_{{ ai_gen_id }}"
+                name="contact[main_goal]"
+                value="Weight management"
+                required
+                data-required
+              >
+              <label for="goal_weight_{{ ai_gen_id }}">Weight management</label>
+            </div>
+            <div class="ai-eligibility-form__radio-option-{{ ai_gen_id }}">
+              <input
+                type="radio"
+                id="goal_antiaging_{{ ai_gen_id }}"
+                name="contact[main_goal]"
+                value="Anti-aging"
+              >
+              <label for="goal_antiaging_{{ ai_gen_id }}">Anti-aging</label>
+            </div>
+            <div class="ai-eligibility-form__radio-option-{{ ai_gen_id }}">
+              <input
+                type="radio"
+                id="goal_gut_{{ ai_gen_id }}"
+                name="contact[main_goal]"
+                value="Gut health"
+              >
+              <label for="goal_gut_{{ ai_gen_id }}">Gut health</label>
+            </div>
+            <div class="ai-eligibility-form__radio-option-{{ ai_gen_id }}">
+              <input
+                type="radio"
+                id="goal_energy_{{ ai_gen_id }}"
+                name="contact[main_goal]"
+                value="Energy boost"
+              >
+              <label for="goal_energy_{{ ai_gen_id }}">Energy boost</label>
+            </div>
+            <div class="ai-eligibility-form__radio-option-{{ ai_gen_id }}">
+              <input
+                type="radio"
+                id="goal_injury_{{ ai_gen_id }}"
+                name="contact[main_goal]"
+                value="Injury recovery"
+              >
+              <label for="goal_injury_{{ ai_gen_id }}">Injury recovery</label>
+            </div>
+            <div class="ai-eligibility-form__radio-option-{{ ai_gen_id }}">
+              <input
+                type="radio"
+                id="goal_immune_{{ ai_gen_id }}"
+                name="contact[main_goal]"
+                value="Immune support"
+              >
+              <label for="goal_immune_{{ ai_gen_id }}">Immune support</label>
+            </div>
+            <div class="ai-eligibility-form__radio-option-{{ ai_gen_id }}">
+              <input
+                type="radio"
+                id="goal_other_{{ ai_gen_id }}"
+                name="contact[main_goal]"
+                value="Other"
+              >
+              <label for="goal_other_{{ ai_gen_id }}">Other</label>
+            </div>
+          </div>
+          <div class="ai-eligibility-form__error-{{ ai_gen_id }}" data-error>Please select an option</div>
+        </div>
+      </div>
+
+      <div class="ai-eligibility-form__step-{{ ai_gen_id }}" data-step="6">
+        <div class="ai-eligibility-form__question-{{ ai_gen_id }}">
+          <label class="ai-eligibility-form__label-{{ ai_gen_id }}">
+            Are you currently pregnant or breastfeeding? <span style="color: {{ block.settings.error_color }};">*</span>
+          </label>
+          <div class="ai-eligibility-form__radio-group-{{ ai_gen_id }}">
+            <div class="ai-eligibility-form__radio-option-{{ ai_gen_id }}">
+              <input
+                type="radio"
+                id="pregnancy_yes_{{ ai_gen_id }}"
+                name="contact[pregnancy_breastfeeding]"
+                value="Yes"
+                required
+                data-required
+              >
+              <label for="pregnancy_yes_{{ ai_gen_id }}">Yes</label>
+            </div>
+            <div class="ai-eligibility-form__radio-option-{{ ai_gen_id }}">
+              <input
+                type="radio"
+                id="pregnancy_no_{{ ai_gen_id }}"
+                name="contact[pregnancy_breastfeeding]"
+                value="No"
+              >
+              <label for="pregnancy_no_{{ ai_gen_id }}">No</label>
+            </div>
+          </div>
+          <div class="ai-eligibility-form__error-{{ ai_gen_id }}" data-error>Please select an option</div>
+        </div>
+      </div>
+
+      <div class="ai-eligibility-form__step-{{ ai_gen_id }}" data-step="7">
+        <div class="ai-eligibility-form__question-{{ ai_gen_id }}">
+          <label class="ai-eligibility-form__label-{{ ai_gen_id }}">
+            Have you ever had a serious reaction to any peptide, hormone or weight-loss injection? <span style="color: {{ block.settings.error_color }};">*</span>
+          </label>
+          <div class="ai-eligibility-form__radio-group-{{ ai_gen_id }}">
+            <div class="ai-eligibility-form__radio-option-{{ ai_gen_id }}">
+              <input
+                type="radio"
+                id="reaction_yes_{{ ai_gen_id }}"
+                name="contact[serious_reaction]"
+                value="Yes"
+                required
+                data-required
+              >
+              <label for="reaction_yes_{{ ai_gen_id }}">Yes</label>
+            </div>
+            <div class="ai-eligibility-form__radio-option-{{ ai_gen_id }}">
+              <input
+                type="radio"
+                id="reaction_no_{{ ai_gen_id }}"
+                name="contact[serious_reaction]"
+                value="No"
+              >
+              <label for="reaction_no_{{ ai_gen_id }}">No</label>
+            </div>
+          </div>
+          <div class="ai-eligibility-form__error-{{ ai_gen_id }}" data-error>Please select an option</div>
+        </div>
+      </div>
+
+      <div class="ai-eligibility-form__step-{{ ai_gen_id }}" data-step="8">
+        <div class="ai-eligibility-form__question-{{ ai_gen_id }}">
+          <label class="ai-eligibility-form__label-{{ ai_gen_id }}">
+            Consent <span style="color: {{ block.settings.error_color }};">*</span>
+          </label>
+          <div class="ai-eligibility-form__consent-{{ ai_gen_id }}">
+            <input
+              type="checkbox"
+              id="consent_{{ ai_gen_id }}"
+              name="contact[consent]"
+              value="true"
+              required
+              data-required
+            >
+            <label for="consent_{{ ai_gen_id }}">
+              I confirm that the information I have provided is true and accurate to the best of my knowledge. I consent to having my information reviewed by a qualified doctor for eligibility assessment.
+            </label>
+          </div>
+          <div class="ai-eligibility-form__error-{{ ai_gen_id }}" data-error>You must agree to the consent statement</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ai-eligibility-form__navigation-{{ ai_gen_id }}">
+      <button
+        type="button"
+        class="ai-eligibility-form__button-{{ ai_gen_id }} ai-eligibility-form__button--previous-{{ ai_gen_id }}"
+        data-previous-btn
+        disabled
+      >
+        Previous
+      </button>
+      <button
+        type="button"
+        class="ai-eligibility-form__button-{{ ai_gen_id }} ai-eligibility-form__button--next-{{ ai_gen_id }}"
+        data-next-btn
+      >
+        Next
+      </button>
+      <button
+        type="submit"
+        class="ai-eligibility-form__button-{{ ai_gen_id }} ai-eligibility-form__button--submit-{{ ai_gen_id }}"
+        data-submit-btn
+        style="display: none;"
+      >
+        Submit
+      </button>
+    </div>
+  {%- endform -%}
+
+  <div class="ai-eligibility-form__success-{{ ai_gen_id }}" data-success-message>
+    <svg class="ai-eligibility-form__success-icon-{{ ai_gen_id }}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+    <h2 class="ai-eligibility-form__success-title-{{ ai_gen_id }}">{{ block.settings.success_title }}</h2>
+    <p class="ai-eligibility-form__success-message-{{ ai_gen_id }}">{{ block.settings.success_message }}</p>
+  </div>
+</eligibility-form-{{ ai_gen_id }}>
+
+<script>
+  (function() {
+    class EligibilityForm{{ ai_gen_id }} extends HTMLElement {
+      constructor() {
+        super();
+        this.currentStep = 1;
+        this.totalSteps = 8;
+      }
+
+      connectedCallback() {
+        this.steps = this.querySelectorAll('[data-step]');
+        this.progressFill = this.querySelector('[data-progress-fill]');
+        this.progressText = this.querySelector('[data-progress-text]');
+        this.previousBtn = this.querySelector('[data-previous-btn]');
+        this.nextBtn = this.querySelector('[data-next-btn]');
+        this.submitBtn = this.querySelector('[data-submit-btn]');
+        this.form = this.querySelector('form');
+        this.successMessage = this.querySelector('[data-success-message]');
+
+        this.setupEventListeners();
+        this.updateProgress();
+        this.setupExclusiveCheckbox();
+      }
+
+      setupEventListeners() {
+        this.previousBtn.addEventListener('click', () => this.goToPreviousStep());
+        this.nextBtn.addEventListener('click', () => this.goToNextStep());
+        
+        this.form.addEventListener('submit', (e) => {
+          e.preventDefault();
+          this.handleSubmit();
+        });
+      }
+
+      setupExclusiveCheckbox() {
+        const medicalConditionsGroup = this.querySelector('[data-medical-conditions]');
+        const exclusiveCheckbox = medicalConditionsGroup.querySelector('[data-exclusive]');
+        const otherCheckboxes = medicalConditionsGroup.querySelectorAll('input[type="checkbox"]:not([data-exclusive])');
+
+        exclusiveCheckbox.addEventListener('change', () => {
+          if (exclusiveCheckbox.checked) {
+            otherCheckboxes.forEach(cb => {
+              cb.checked = false;
+            });
+          }
+        });
+
+        otherCheckboxes.forEach(cb => {
+          cb.addEventListener('change', () => {
+            if (cb.checked) {
+              exclusiveCheckbox.checked = false;
+            }
+          });
+        });
+      }
+
+      goToNextStep() {
+        if (this.validateCurrentStep()) {
+          this.currentStep++;
+          this.updateStepDisplay();
+          this.updateProgress();
+          this.scrollToTop();
+        }
+      }
+
+      goToPreviousStep() {
+        this.currentStep--;
+        this.updateStepDisplay();
+        this.updateProgress();
+        this.scrollToTop();
+      }
+
+      validateCurrentStep() {
+        const currentStepElement = this.querySelector(`[data-step="${this.currentStep}"]`);
+        const requiredFields = currentStepElement.querySelectorAll('[data-required]');
+        let isValid = true;
+
+        requiredFields.forEach(field => {
+          const errorElement = field.closest('.ai-eligibility-form__question-{{ ai_gen_id }}').querySelector('[data-error]');
+          
+          if (field.type === 'radio') {
+            const radioGroup = currentStepElement.querySelectorAll(`input[name="${field.name}"]`);
+            const isChecked = Array.from(radioGroup).some(radio => radio.checked);
+            
+            if (!isChecked) {
+              isValid = false;
+              errorElement.classList.add('visible');
+            } else {
+              errorElement.classList.remove('visible');
+            }
+          } else if (field.type === 'checkbox' && field.hasAttribute('data-exclusive')) {
+            const checkboxGroup = currentStepElement.querySelectorAll('input[type="checkbox"]');
+            const isAnyChecked = Array.from(checkboxGroup).some(cb => cb.checked);
+            
+            if (!isAnyChecked) {
+              isValid = false;
+              errorElement.classList.add('visible');
+            } else {
+              errorElement.classList.remove('visible');
+            }
+          } else if (field.type === 'checkbox') {
+            if (!field.checked) {
+              isValid = false;
+              errorElement.classList.add('visible');
+            } else {
+              errorElement.classList.remove('visible');
+            }
+          } else {
+            if (!field.value.trim()) {
+              isValid = false;
+              errorElement.classList.add('visible');
+            } else {
+              errorElement.classList.remove('visible');
+            }
+          }
+        });
+
+        return isValid;
+      }
+
+      updateStepDisplay() {
+        this.steps.forEach((step, index) => {
+          if (index + 1 === this.currentStep) {
+            step.classList.add('active');
+          } else {
+            step.classList.remove('active');
+          }
+        });
+
+        this.previousBtn.disabled = this.currentStep === 1;
+
+        if (this.currentStep === this.totalSteps) {
+          this.nextBtn.style.display = 'none';
+          this.submitBtn.style.display = 'block';
+        } else {
+          this.nextBtn.style.display = 'block';
+          this.submitBtn.style.display = 'none';
+        }
+      }
+
+      updateProgress() {
+        const progress = (this.currentStep / this.totalSteps) * 100;
+        this.progressFill.style.width = progress + '%';
+        this.progressText.textContent = `Step ${this.currentStep} of ${this.totalSteps}`;
+      }
+
+      scrollToTop() {
+        this.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+
+      handleSubmit() {
+        if (this.validateCurrentStep()) {
+          this.form.style.display = 'none';
+          this.querySelector('.ai-eligibility-form__progress-{{ ai_gen_id }}').style.display = 'none';
+          this.querySelector('.ai-eligibility-form__navigation-{{ ai_gen_id }}').style.display = 'none';
+          this.successMessage.classList.add('visible');
+          this.scrollToTop();
+        }
+      }
+    }
+
+    customElements.define('eligibility-form-{{ ai_gen_id }}', EligibilityForm{{ ai_gen_id }});
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Eligibility form",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Form settings"
+    },
+    {
+      "type": "range",
+      "id": "desktop_width_percent",
+      "label": "Desktop width",
+      "min": 50,
+      "max": 100,
+      "step": 5,
+      "unit": "%",
+      "default": 100
+    },
+    {
+      "type": "header",
+      "content": "Colors"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text",
+      "default": "#1c1c1c"
+    },
+    {
+      "type": "color",
+      "id": "primary_color",
+      "label": "Primary",
+      "default": "#1c1c1c"
+    },
+    {
+      "type": "color",
+      "id": "primary_button_text",
+      "label": "Primary button text",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "primary_button_hover",
+      "label": "Primary button hover",
+      "default": "#000000"
+    },
+    {
+      "type": "color",
+      "id": "secondary_button_bg",
+      "label": "Secondary button background",
+      "default": "#efefef"
+    },
+    {
+      "type": "color",
+      "id": "secondary_button_text",
+      "label": "Secondary button text",
+      "default": "#1c1c1c"
+    },
+    {
+      "type": "color",
+      "id": "secondary_button_hover",
+      "label": "Secondary button hover",
+      "default": "#d9d9d9"
+    },
+    {
+      "type": "color",
+      "id": "input_bg_color",
+      "label": "Input background",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "input_border_color",
+      "label": "Input border",
+      "default": "#d9d9d9"
+    },
+    {
+      "type": "color",
+      "id": "option_hover_bg",
+      "label": "Option hover background",
+      "default": "#f9f9f9"
+    },
+    {
+      "type": "color",
+      "id": "consent_bg_color",
+      "label": "Consent background",
+      "default": "#f9f9f9"
+    },
+    {
+      "type": "color",
+      "id": "progress_bg_color",
+      "label": "Progress bar background",
+      "default": "#efefef"
+    },
+    {
+      "type": "color",
+      "id": "progress_fill_color",
+      "label": "Progress bar fill",
+      "default": "#1c1c1c"
+    },
+    {
+      "type": "color",
+      "id": "success_color",
+      "label": "Success",
+      "default": "#307a07"
+    },
+    {
+      "type": "color",
+      "id": "error_color",
+      "label": "Error",
+      "default": "#cb2b2b"
+    },
+    {
+      "type": "header",
+      "content": "Style"
+    },
+    {
+      "type": "range",
+      "id": "border_radius",
+      "label": "Form border radius",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 8
+    },
+    {
+      "type": "range",
+      "id": "input_border_radius",
+      "label": "Input border radius",
+      "min": 0,
+      "max": 20,
+      "step": 2,
+      "unit": "px",
+      "default": 4
+    },
+    {
+      "type": "range",
+      "id": "button_border_radius",
+      "label": "Button border radius",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 4
+    },
+    {
+      "type": "range",
+      "id": "label_font_size",
+      "label": "Label font size",
+      "min": 12,
+      "max": 24,
+      "step": 1,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "header",
+      "content": "Success message"
+    },
+    {
+      "type": "text",
+      "id": "success_title",
+      "label": "Title",
+      "default": "Thank you for submitting!"
+    },
+    {
+      "type": "textarea",
+      "id": "success_message",
+      "label": "Message",
+      "default": "Your eligibility form has been received. A doctor will review your information and contact you within 24-48 hours."
+    }
+  ],
+  "presets": [
+    {
+      "name": "Eligibility form"
+    }
+  ]
+}
+{% endschema %}

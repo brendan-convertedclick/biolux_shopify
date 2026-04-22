@@ -1,0 +1,379 @@
+{% doc %}
+  @prompt
+    I want a section that asks user if they want to continue as guest or log in. Log in button should redirect to sing in page the continue as guest redirects to custom page. 
+{% enddoc %}
+{% assign ai_gen_id = block.id | replace: '_', '' | downcase %}
+
+{% style %}
+  .ai-auth-choice-{{ ai_gen_id }} {
+    display: block;
+    width: {{ block.settings.desktop_width_percent }}%;
+    max-width: 100%;
+    padding: {{ block.settings.padding }}px;
+    background-color: {{ block.settings.background_color }};
+    border-radius: {{ block.settings.border_radius }}px;
+  }
+
+  .ai-auth-choice-container-{{ ai_gen_id }} {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    max-width: {{ block.settings.max_width }}px;
+    margin: 0 auto;
+  }
+
+  .ai-auth-choice-header-{{ ai_gen_id }} {
+    text-align: center;
+  }
+
+  .ai-auth-choice-title-{{ ai_gen_id }} {
+    font-size: {{ block.settings.title_size }}px;
+    color: {{ block.settings.text_color }};
+    margin: 0 0 12px 0;
+    font-weight: 600;
+  }
+
+  .ai-auth-choice-description-{{ ai_gen_id }} {
+    font-size: {{ block.settings.description_size }}px;
+    color: {{ block.settings.text_color }};
+    margin: 0;
+    opacity: 0.8;
+  }
+
+  .ai-auth-choice-buttons-{{ ai_gen_id }} {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .ai-auth-choice-button-{{ ai_gen_id }} {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 16px 24px;
+    border-radius: {{ block.settings.button_border_radius }}px;
+    text-decoration: none;
+    font-size: {{ block.settings.button_text_size }}px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    cursor: pointer;
+  }
+
+  .ai-auth-choice-button-{{ ai_gen_id }}--login {
+    background-color: {{ block.settings.login_button_bg }};
+    color: {{ block.settings.login_button_text_color }};
+    border-color: {{ block.settings.login_button_bg }};
+  }
+
+  .ai-auth-choice-button-{{ ai_gen_id }}--login:hover {
+    background-color: {{ block.settings.login_button_hover_bg }};
+    border-color: {{ block.settings.login_button_hover_bg }};
+  }
+
+  .ai-auth-choice-button-{{ ai_gen_id }}--guest {
+    background-color: {{ block.settings.guest_button_bg }};
+    color: {{ block.settings.guest_button_text_color }};
+    border-color: {{ block.settings.guest_button_border }};
+  }
+
+  .ai-auth-choice-button-{{ ai_gen_id }}--guest:hover {
+    background-color: {{ block.settings.guest_button_hover_bg }};
+    border-color: {{ block.settings.guest_button_hover_border }};
+  }
+
+  .ai-auth-choice-icon-{{ ai_gen_id }} {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+  }
+
+  @media screen and (max-width: 749px) {
+    .ai-auth-choice-{{ ai_gen_id }} {
+      width: 100%;
+    }
+
+    .ai-auth-choice-title-{{ ai_gen_id }} {
+      font-size: {{ block.settings.title_size | times: 0.85 }}px;
+    }
+
+    .ai-auth-choice-description-{{ ai_gen_id }} {
+      font-size: {{ block.settings.description_size | times: 0.9 }}px;
+    }
+  }
+{% endstyle %}
+
+<div class="ai-auth-choice-{{ ai_gen_id }}" {{ block.shopify_attributes }}>
+  <div class="ai-auth-choice-container-{{ ai_gen_id }}">
+    <div class="ai-auth-choice-header-{{ ai_gen_id }}">
+      {% if block.settings.title != blank %}
+        <h2 class="ai-auth-choice-title-{{ ai_gen_id }}">{{ block.settings.title }}</h2>
+      {% endif %}
+      {% if block.settings.description != blank %}
+        <p class="ai-auth-choice-description-{{ ai_gen_id }}">{{ block.settings.description }}</p>
+      {% endif %}
+    </div>
+
+    <div class="ai-auth-choice-buttons-{{ ai_gen_id }}">
+      <a
+        href="{{ routes.account_login_url }}"
+        class="ai-auth-choice-button-{{ ai_gen_id }} ai-auth-choice-button-{{ ai_gen_id }}--login"
+      >
+        {% if block.settings.show_login_icon %}
+          <svg class="ai-auth-choice-icon-{{ ai_gen_id }}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+            <polyline points="10 17 15 12 10 7"></polyline>
+            <line x1="15" y1="12" x2="3" y2="12"></line>
+          </svg>
+        {% endif %}
+        <span>{{ block.settings.login_button_label }}</span>
+      </a>
+
+      {% if block.settings.guest_page != blank %}
+        <a
+          href="{{ block.settings.guest_page.url }}"
+          class="ai-auth-choice-button-{{ ai_gen_id }} ai-auth-choice-button-{{ ai_gen_id }}--guest"
+        >
+          {% if block.settings.show_guest_icon %}
+            <svg class="ai-auth-choice-icon-{{ ai_gen_id }}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+          {% endif %}
+          <span>{{ block.settings.guest_button_label }}</span>
+        </a>
+      {% else %}
+        <div class="ai-auth-choice-button-{{ ai_gen_id }} ai-auth-choice-button-{{ ai_gen_id }}--guest" style="opacity: 0.5; cursor: not-allowed;">
+          {% if block.settings.show_guest_icon %}
+            <svg class="ai-auth-choice-icon-{{ ai_gen_id }}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+          {% endif %}
+          <span>{{ block.settings.guest_button_label }}</span>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Login or guest choice",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Content"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "title",
+      "label": "Title",
+      "default": "How would you like to continue?"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "description",
+      "label": "Description",
+      "default": "Sign in to your account or continue as a guest"
+    },
+    {
+      "type": "header",
+      "content": "Login button"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "login_button_label",
+      "label": "Button text",
+      "default": "Sign in to your account"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_login_icon",
+      "label": "Show icon",
+      "default": true
+    },
+    {
+      "type": "color",
+      "id": "login_button_bg",
+      "label": "Background",
+      "default": "#b29964"
+    },
+    {
+      "type": "color",
+      "id": "login_button_text_color",
+      "label": "Text",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "login_button_hover_bg",
+      "label": "Hover background",
+      "default": "#9a8456"
+    },
+    {
+      "type": "header",
+      "content": "Guest button"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "guest_button_label",
+      "label": "Button text",
+      "default": "Continue as guest"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_guest_icon",
+      "label": "Show icon",
+      "default": true
+    },
+    {
+      "type": "page",
+      "id": "guest_page",
+      "label": "Guest page"
+    },
+    {
+      "type": "color",
+      "id": "guest_button_bg",
+      "label": "Background",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "guest_button_text_color",
+      "label": "Text",
+      "default": "#1c1c1c"
+    },
+    {
+      "type": "color",
+      "id": "guest_button_border",
+      "label": "Border",
+      "default": "#1c1c1c"
+    },
+    {
+      "type": "color",
+      "id": "guest_button_hover_bg",
+      "label": "Hover background",
+      "default": "#f5f5f5"
+    },
+    {
+      "type": "color",
+      "id": "guest_button_hover_border",
+      "label": "Hover border",
+      "default": "#1c1c1c"
+    },
+    {
+      "type": "header",
+      "content": "Layout"
+    },
+    {
+      "type": "range",
+      "id": "desktop_width_percent",
+      "label": "Desktop width",
+      "min": 50,
+      "max": 100,
+      "step": 5,
+      "unit": "%",
+      "default": 100
+    },
+    {
+      "type": "range",
+      "id": "max_width",
+      "label": "Maximum content width",
+      "min": 300,
+      "max": 800,
+      "step": 50,
+      "unit": "px",
+      "default": 500
+    },
+    {
+      "type": "range",
+      "id": "padding",
+      "label": "Padding",
+      "min": 0,
+      "max": 80,
+      "step": 4,
+      "unit": "px",
+      "default": 40
+    },
+    {
+      "type": "range",
+      "id": "border_radius",
+      "label": "Border radius",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 8
+    },
+    {
+      "type": "range",
+      "id": "button_border_radius",
+      "label": "Button border radius",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 4
+    },
+    {
+      "type": "header",
+      "content": "Colors"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text",
+      "default": "#1c1c1c"
+    },
+    {
+      "type": "header",
+      "content": "Typography"
+    },
+    {
+      "type": "range",
+      "id": "title_size",
+      "label": "Title size",
+      "min": 16,
+      "max": 48,
+      "step": 2,
+      "unit": "px",
+      "default": 28
+    },
+    {
+      "type": "range",
+      "id": "description_size",
+      "label": "Description size",
+      "min": 12,
+      "max": 24,
+      "step": 1,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "button_text_size",
+      "label": "Button text size",
+      "min": 12,
+      "max": 24,
+      "step": 1,
+      "unit": "px",
+      "default": 16
+    }
+  ],
+  "presets": [
+    {
+      "name": "Login or guest choice"
+    }
+  ]
+}
+{% endschema %}

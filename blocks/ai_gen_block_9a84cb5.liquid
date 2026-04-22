@@ -1,0 +1,666 @@
+{% doc %}
+  @prompt
+    show cart information but not checkout button allow cart update like removing product and adding quantity when quantity is updated update information don't reload page, show a  health disclaimer checkbox. when checked show checkout button but when unchecked dont show, add button with control, I want to adjust button width. and show total items at top
+{% enddoc %}
+{% assign ai_gen_id = block.id | replace: '_', '' | downcase %}
+
+{% style %}
+  .ai-cart-container-{{ ai_gen_id }} {
+    width: {{ block.settings.desktop_width_percent }}%;
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 20px;
+    display: block;
+  }
+
+  .ai-cart-header-{{ ai_gen_id }} {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid {{ block.settings.border_color }};
+  }
+
+  .ai-cart-header-title-{{ ai_gen_id }} {
+    font-size: 24px;
+    font-weight: 700;
+    color: {{ block.settings.text_color }};
+    margin: 0;
+  }
+
+  .ai-cart-header-count-{{ ai_gen_id }} {
+    font-size: 16px;
+    color: {{ block.settings.secondary_text_color }};
+  }
+
+  .ai-cart-items-{{ ai_gen_id }} {
+    margin-bottom: 30px;
+  }
+
+  .ai-cart-item-{{ ai_gen_id }} {
+    display: flex;
+    gap: 20px;
+    padding: 20px 0;
+    border-bottom: 1px solid {{ block.settings.border_color }};
+  }
+
+  .ai-cart-item-image-{{ ai_gen_id }} {
+    width: 100px;
+    height: 100px;
+    flex-shrink: 0;
+  }
+
+  .ai-cart-item-image-{{ ai_gen_id }} img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 4px;
+  }
+
+  .ai-cart-item-details-{{ ai_gen_id }} {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .ai-cart-item-title-{{ ai_gen_id }} {
+    font-size: 16px;
+    font-weight: 600;
+    color: {{ block.settings.text_color }};
+    margin: 0;
+  }
+
+  .ai-cart-item-variant-{{ ai_gen_id }} {
+    font-size: 14px;
+    color: {{ block.settings.secondary_text_color }};
+  }
+
+  .ai-cart-item-price-{{ ai_gen_id }} {
+    font-size: 16px;
+    font-weight: 600;
+    color: {{ block.settings.text_color }};
+  }
+
+  .ai-cart-item-actions-{{ ai_gen_id }} {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+  }
+
+  .ai-cart-quantity-{{ ai_gen_id }} {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid {{ block.settings.border_color }};
+    border-radius: 4px;
+    padding: 4px;
+  }
+
+  .ai-cart-quantity-btn-{{ ai_gen_id }} {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 8px;
+    color: {{ block.settings.text_color }};
+    font-size: 18px;
+    line-height: 1;
+  }
+
+  .ai-cart-quantity-btn-{{ ai_gen_id }}:hover {
+    color: {{ block.settings.button_color }};
+  }
+
+  .ai-cart-quantity-input-{{ ai_gen_id }} {
+    width: 40px;
+    text-align: center;
+    border: none;
+    font-size: 14px;
+    color: {{ block.settings.text_color }};
+  }
+
+  .ai-cart-remove-btn-{{ ai_gen_id }} {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: {{ block.settings.secondary_text_color }};
+    font-size: 14px;
+    text-decoration: underline;
+  }
+
+  .ai-cart-remove-btn-{{ ai_gen_id }}:hover {
+    color: {{ block.settings.error_color }};
+  }
+
+  .ai-cart-empty-{{ ai_gen_id }} {
+    text-align: center;
+    padding: 40px 20px;
+    color: {{ block.settings.secondary_text_color }};
+  }
+
+  .ai-cart-summary-{{ ai_gen_id }} {
+    background-color: {{ block.settings.summary_background }};
+    padding: 24px;
+    border-radius: 8px;
+  }
+
+  .ai-cart-summary-row-{{ ai_gen_id }} {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    font-size: 16px;
+    color: {{ block.settings.text_color }};
+  }
+
+  .ai-cart-summary-total-{{ ai_gen_id }} {
+    display: flex;
+    justify-content: space-between;
+    padding-top: 12px;
+    border-top: 2px solid {{ block.settings.border_color }};
+    font-size: 20px;
+    font-weight: 700;
+    color: {{ block.settings.text_color }};
+    margin-bottom: 20px;
+  }
+
+  .ai-cart-disclaimer-{{ ai_gen_id }} {
+    margin: 20px 0;
+    padding: 16px;
+    background-color: {{ block.settings.disclaimer_background }};
+    border-radius: 4px;
+  }
+
+  .ai-cart-disclaimer-checkbox-{{ ai_gen_id }} {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .ai-cart-disclaimer-checkbox-{{ ai_gen_id }} input[type="checkbox"] {
+    margin-top: 4px;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .ai-cart-disclaimer-label-{{ ai_gen_id }} {
+    font-size: 14px;
+    color: {{ block.settings.text_color }};
+    line-height: 1.5;
+    cursor: pointer;
+  }
+
+  .ai-cart-buttons-{{ ai_gen_id }} {
+    display: flex;
+    gap: 12px;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .ai-cart-checkout-btn-{{ ai_gen_id }},
+  .ai-cart-continue-btn-{{ ai_gen_id }} {
+    width: {{ block.settings.button_width_percent }}%;
+    max-width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    display: block;
+    transition: background-color 0.3s ease;
+  }
+
+  .ai-cart-checkout-btn-{{ ai_gen_id }} {
+    background-color: {{ block.settings.button_color }};
+    color: {{ block.settings.button_text_color }};
+  }
+
+  .ai-cart-checkout-btn-{{ ai_gen_id }}:hover {
+    background-color: {{ block.settings.button_hover_color }};
+  }
+
+  .ai-cart-checkout-btn-{{ ai_gen_id }}.hidden {
+    display: none;
+  }
+
+  .ai-cart-continue-btn-{{ ai_gen_id }} {
+    background-color: {{ block.settings.continue_button_color }};
+    color: {{ block.settings.continue_button_text_color }};
+  }
+
+  .ai-cart-continue-btn-{{ ai_gen_id }}:hover {
+    background-color: {{ block.settings.continue_button_hover_color }};
+  }
+
+  .ai-cart-loading-{{ ai_gen_id }} {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  @media screen and (max-width: 749px) {
+    .ai-cart-item-{{ ai_gen_id }} {
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .ai-cart-item-image-{{ ai_gen_id }} {
+      width: 100%;
+      height: 200px;
+    }
+
+    .ai-cart-checkout-btn-{{ ai_gen_id }},
+    .ai-cart-continue-btn-{{ ai_gen_id }} {
+      width: 100%;
+    }
+  }
+{% endstyle %}
+
+<cart-block-{{ ai_gen_id }}
+  class="ai-cart-container-{{ ai_gen_id }}"
+  {{ block.shopify_attributes }}
+>
+  <div class="ai-cart-header-{{ ai_gen_id }}">
+    <h2 class="ai-cart-header-title-{{ ai_gen_id }}">{{ block.settings.cart_title }}</h2>
+    <div class="ai-cart-header-count-{{ ai_gen_id }}" data-header-count>
+      {{ cart.item_count }} {% if cart.item_count == 1 %}item{% else %}items{% endif %}
+    </div>
+  </div>
+
+  <div class="ai-cart-items-{{ ai_gen_id }}" data-cart-items></div>
+
+  <div class="ai-cart-summary-{{ ai_gen_id }}">
+    <div class="ai-cart-summary-row-{{ ai_gen_id }}">
+      <span>Subtotal</span>
+      <span data-cart-subtotal>{{ cart.total_price | money }}</span>
+    </div>
+    <div class="ai-cart-summary-total-{{ ai_gen_id }}">
+      <span>Total</span>
+      <span data-cart-total>{{ cart.total_price | money }}</span>
+    </div>
+
+    {% if block.settings.show_disclaimer %}
+      <div class="ai-cart-disclaimer-{{ ai_gen_id }}">
+        <div class="ai-cart-disclaimer-checkbox-{{ ai_gen_id }}">
+          <input
+            type="checkbox"
+            id="health-disclaimer-{{ ai_gen_id }}"
+            data-disclaimer-checkbox
+          >
+          <label
+            for="health-disclaimer-{{ ai_gen_id }}"
+            class="ai-cart-disclaimer-label-{{ ai_gen_id }}"
+          >
+            {{ block.settings.disclaimer_text }}
+          </label>
+        </div>
+      </div>
+    {% endif %}
+
+    <div class="ai-cart-buttons-{{ ai_gen_id }}">
+      <a
+        href="/checkout"
+        class="ai-cart-checkout-btn-{{ ai_gen_id }} {% unless block.settings.show_disclaimer == false %}hidden{% endunless %}"
+        data-checkout-button
+      >
+        {{ block.settings.checkout_button_text }}
+      </a>
+
+      {% if block.settings.show_continue_shopping %}
+        <a
+          href="{{ block.settings.continue_shopping_url }}"
+          class="ai-cart-continue-btn-{{ ai_gen_id }}"
+        >
+          {{ block.settings.continue_button_text }}
+        </a>
+      {% endif %}
+    </div>
+  </div>
+</cart-block-{{ ai_gen_id }}>
+
+<script>
+  (function() {
+    class CartBlock{{ ai_gen_id }} extends HTMLElement {
+      constructor() {
+        super();
+        this.cartItemsContainer = this.querySelector('[data-cart-items]');
+        this.cartSubtotal = this.querySelector('[data-cart-subtotal]');
+        this.cartTotal = this.querySelector('[data-cart-total]');
+        this.headerCount = this.querySelector('[data-header-count]');
+        this.checkoutButton = this.querySelector('[data-checkout-button]');
+        this.disclaimerCheckbox = this.querySelector('[data-disclaimer-checkbox]');
+        this.showDisclaimer = {{ block.settings.show_disclaimer | json }};
+      }
+
+      connectedCallback() {
+        this.renderCart();
+        this.setupDisclaimerListener();
+      }
+
+      setupDisclaimerListener() {
+        if (this.disclaimerCheckbox) {
+          this.disclaimerCheckbox.addEventListener('change', () => {
+            if (this.disclaimerCheckbox.checked) {
+              this.checkoutButton.classList.remove('hidden');
+            } else {
+              this.checkoutButton.classList.add('hidden');
+            }
+          });
+        }
+      }
+
+      async renderCart() {
+        try {
+          const response = await fetch('/cart.js');
+          const cart = await response.json();
+
+          if (cart.item_count === 0) {
+            this.cartItemsContainer.innerHTML = `
+              <div class="ai-cart-empty-{{ ai_gen_id }}">
+                <p>Your cart is empty</p>
+              </div>
+            `;
+            this.headerCount.textContent = '0 items';
+            return;
+          }
+
+          this.headerCount.textContent = `${cart.item_count} ${cart.item_count === 1 ? 'item' : 'items'}`;
+
+          this.cartItemsContainer.innerHTML = cart.items.map(item => `
+            <div class="ai-cart-item-{{ ai_gen_id }}" data-line-key="${item.key}">
+              <div class="ai-cart-item-image-{{ ai_gen_id }}">
+                <img src="${item.image}" alt="${item.product_title}" loading="lazy">
+              </div>
+              <div class="ai-cart-item-details-{{ ai_gen_id }}">
+                <h3 class="ai-cart-item-title-{{ ai_gen_id }}">${item.product_title}</h3>
+                ${item.variant_title ? `<div class="ai-cart-item-variant-{{ ai_gen_id }}">${item.variant_title}</div>` : ''}
+                <div class="ai-cart-item-price-{{ ai_gen_id }}">${this.formatMoney(item.final_line_price)}</div>
+                <div class="ai-cart-item-actions-{{ ai_gen_id }}">
+                  <div class="ai-cart-quantity-{{ ai_gen_id }}">
+                    <button
+                      class="ai-cart-quantity-btn-{{ ai_gen_id }}"
+                      data-decrease
+                      data-line-key="${item.key}"
+                      aria-label="Decrease quantity"
+                    >−</button>
+                    <input
+                      type="number"
+                      class="ai-cart-quantity-input-{{ ai_gen_id }}"
+                      value="${item.quantity}"
+                      min="0"
+                      data-quantity-input
+                      data-line-key="${item.key}"
+                      aria-label="Quantity"
+                    >
+                    <button
+                      class="ai-cart-quantity-btn-{{ ai_gen_id }}"
+                      data-increase
+                      data-line-key="${item.key}"
+                      aria-label="Increase quantity"
+                    >+</button>
+                  </div>
+                  <button
+                    class="ai-cart-remove-btn-{{ ai_gen_id }}"
+                    data-remove
+                    data-line-key="${item.key}"
+                  >Remove</button>
+                </div>
+              </div>
+            </div>
+          `).join('');
+
+          this.attachEventListeners();
+        } catch (error) {
+          console.error('Error loading cart:', error);
+        }
+      }
+
+      attachEventListeners() {
+        this.querySelectorAll('[data-increase]').forEach(btn => {
+          btn.addEventListener('click', (e) => this.handleQuantityChange(e, 1));
+        });
+
+        this.querySelectorAll('[data-decrease]').forEach(btn => {
+          btn.addEventListener('click', (e) => this.handleQuantityChange(e, -1));
+        });
+
+        this.querySelectorAll('[data-quantity-input]').forEach(input => {
+          input.addEventListener('change', (e) => this.handleQuantityInput(e));
+        });
+
+        this.querySelectorAll('[data-remove]').forEach(btn => {
+          btn.addEventListener('click', (e) => this.handleRemove(e));
+        });
+      }
+
+      async handleQuantityChange(event, delta) {
+        const lineKey = event.target.dataset.lineKey;
+        const input = this.querySelector(`[data-quantity-input][data-line-key="${lineKey}"]`);
+        const newQuantity = parseInt(input.value) + delta;
+
+        if (newQuantity >= 0) {
+          await this.updateCart(lineKey, newQuantity);
+        }
+      }
+
+      async handleQuantityInput(event) {
+        const lineKey = event.target.dataset.lineKey;
+        const newQuantity = parseInt(event.target.value) || 0;
+        await this.updateCart(lineKey, newQuantity);
+      }
+
+      async handleRemove(event) {
+        const lineKey = event.target.dataset.lineKey;
+        await this.updateCart(lineKey, 0);
+      }
+
+      async updateCart(lineKey, quantity) {
+        this.classList.add('ai-cart-loading-{{ ai_gen_id }}');
+
+        try {
+          const response = await fetch('/cart/change.js', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              id: lineKey,
+              quantity: quantity
+            })
+          });
+
+          const cart = await response.json();
+          this.updateCartSummary(cart);
+          await this.renderCart();
+        } catch (error) {
+          console.error('Error updating cart:', error);
+        } finally {
+          this.classList.remove('ai-cart-loading-{{ ai_gen_id }}');
+        }
+      }
+
+      updateCartSummary(cart) {
+        this.cartSubtotal.textContent = this.formatMoney(cart.total_price);
+        this.cartTotal.textContent = this.formatMoney(cart.total_price);
+      }
+
+      formatMoney(cents) {
+        const amount = cents / 100;
+        return new Intl.NumberFormat('{{ localization.language.iso_code }}', {
+          style: 'currency',
+          currency: '{{ cart.currency.iso_code }}'
+        }).format(amount);
+      }
+    }
+
+    customElements.define('cart-block-{{ ai_gen_id }}', CartBlock{{ ai_gen_id }});
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Cart with disclaimer",
+  "tag": null,
+  "settings": [
+    {
+      "type": "header",
+      "content": "Layout"
+    },
+    {
+      "type": "range",
+      "id": "desktop_width_percent",
+      "label": "Desktop width",
+      "min": 50,
+      "max": 100,
+      "step": 5,
+      "unit": "%",
+      "default": 100
+    },
+    {
+      "type": "inline_richtext",
+      "id": "cart_title",
+      "label": "Cart title",
+      "default": "Your cart"
+    },
+    {
+      "type": "header",
+      "content": "Disclaimer"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_disclaimer",
+      "label": "Show health disclaimer",
+      "default": true
+    },
+    {
+      "type": "richtext",
+      "id": "disclaimer_text",
+      "label": "Disclaimer text",
+      "default": "<p>I confirm that I have read and agree to the health disclaimer and understand the terms of use for these products.</p>"
+    },
+    {
+      "type": "header",
+      "content": "Buttons"
+    },
+    {
+      "type": "range",
+      "id": "button_width_percent",
+      "label": "Button width",
+      "min": 30,
+      "max": 100,
+      "step": 5,
+      "unit": "%",
+      "default": 100
+    },
+    {
+      "type": "inline_richtext",
+      "id": "checkout_button_text",
+      "label": "Checkout button text",
+      "default": "Proceed to checkout"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_continue_shopping",
+      "label": "Show continue shopping button",
+      "default": true
+    },
+    {
+      "type": "inline_richtext",
+      "id": "continue_button_text",
+      "label": "Continue shopping button text",
+      "default": "Continue shopping"
+    },
+    {
+      "type": "url",
+      "id": "continue_shopping_url",
+      "label": "Continue shopping link"
+    },
+    {
+      "type": "header",
+      "content": "Colors"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text",
+      "default": "#1c1c1c"
+    },
+    {
+      "type": "color",
+      "id": "secondary_text_color",
+      "label": "Secondary text",
+      "default": "#666666"
+    },
+    {
+      "type": "color",
+      "id": "border_color",
+      "label": "Border",
+      "default": "#e0e0e0"
+    },
+    {
+      "type": "color",
+      "id": "summary_background",
+      "label": "Summary background",
+      "default": "#f9f9f9"
+    },
+    {
+      "type": "color",
+      "id": "disclaimer_background",
+      "label": "Disclaimer background",
+      "default": "#fff9e6"
+    },
+    {
+      "type": "color",
+      "id": "button_color",
+      "label": "Checkout button background",
+      "default": "#b29964"
+    },
+    {
+      "type": "color",
+      "id": "button_text_color",
+      "label": "Checkout button text",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "button_hover_color",
+      "label": "Checkout button hover",
+      "default": "#9a8355"
+    },
+    {
+      "type": "color",
+      "id": "continue_button_color",
+      "label": "Continue button background",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "continue_button_text_color",
+      "label": "Continue button text",
+      "default": "#1c1c1c"
+    },
+    {
+      "type": "color",
+      "id": "continue_button_hover_color",
+      "label": "Continue button hover",
+      "default": "#f0f0f0"
+    },
+    {
+      "type": "color",
+      "id": "error_color",
+      "label": "Error",
+      "default": "#cb2b2b"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Cart with disclaimer"
+    }
+  ]
+}
+{% endschema %}

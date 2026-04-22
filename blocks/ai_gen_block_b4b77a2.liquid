@@ -1,0 +1,771 @@
+{% doc %}
+  @prompt
+    A toggle button that asks the user if the provided information is still the same. Below the toggle, there will be 2 buttons: one that says "Proceed to Checkout" if the toggle button is "Yes," and another that says "Update Medical Check." if customer is sign in if not show sign in and hide the toggle  and proceed to check out button.  If customer already signed in hide sign in button, control section alignment. Add instruction above button that states user needs to sign in to be able to check out an d make sure that the Medical check form was submitted. check customer tags if there is red flag or green flag all to add ctom message for either. If there are no tags show message " Please submit the  medical check form.  According to the tags the red flag doesn't see proceed to check out button. By default the toogle should be on
+    
+    Instead of link for Update Medical Info please use this <div class="upform-container" style="display: none !important;" data-id="a6e76e"></div> or have a liquid block for me to add the code, add button size controls, make buttons smaller in width size. Add a link text that says checkout as quest and that will show the medical check form whn clicked.
+{% enddoc %}
+{% assign ai_gen_id = block.id | replace: '_', '' | downcase %}
+
+{% style %}
+  .ai-medical-checkout-gate-{{ ai_gen_id }} {
+    display: block;
+    width: {{ block.settings.desktop_width_percent }}%;
+    max-width: 100%;
+    padding: {{ block.settings.container_padding }}px;
+    background-color: {{ block.settings.background_color }};
+    border-radius: {{ block.settings.border_radius }}px;
+    text-align: {{ block.settings.alignment }};
+  }
+
+  .ai-medical-checkout-gate__instruction-{{ ai_gen_id }} {
+    color: {{ block.settings.instruction_color }};
+    font-size: {{ block.settings.instruction_font_size }}px;
+    margin-bottom: 20px;
+  }
+
+  .ai-medical-checkout-gate__message-{{ ai_gen_id }} {
+    padding: 16px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    font-size: {{ block.settings.message_font_size }}px;
+  }
+
+  .ai-medical-checkout-gate__message--success-{{ ai_gen_id }} {
+    background-color: {{ block.settings.success_bg_color }};
+    color: {{ block.settings.success_text_color }};
+  }
+
+  .ai-medical-checkout-gate__message--error-{{ ai_gen_id }} {
+    background-color: {{ block.settings.error_bg_color }};
+    color: {{ block.settings.error_text_color }};
+  }
+
+  .ai-medical-checkout-gate__message--warning-{{ ai_gen_id }} {
+    background-color: {{ block.settings.warning_bg_color }};
+    color: {{ block.settings.warning_text_color }};
+  }
+
+  .ai-medical-checkout-gate__toggle-wrapper-{{ ai_gen_id }} {
+    margin-bottom: 24px;
+  }
+
+  .ai-medical-checkout-gate__toggle-label-{{ ai_gen_id }} {
+    display: block;
+    font-size: {{ block.settings.toggle_label_size }}px;
+    color: {{ block.settings.text_color }};
+    margin-bottom: 12px;
+    font-weight: 600;
+  }
+
+  .ai-medical-checkout-gate__toggle-container-{{ ai_gen_id }} {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .ai-medical-checkout-gate__toggle-switch-{{ ai_gen_id }} {
+    position: relative;
+    width: 60px;
+    height: 32px;
+    background-color: {{ block.settings.toggle_off_color }};
+    border-radius: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+
+  .ai-medical-checkout-gate__toggle-switch-{{ ai_gen_id }}.active {
+    background-color: {{ block.settings.toggle_on_color }};
+  }
+
+  .ai-medical-checkout-gate__toggle-knob-{{ ai_gen_id }} {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: 24px;
+    height: 24px;
+    background-color: #ffffff;
+    border-radius: 50%;
+    transition: transform 0.3s ease;
+  }
+
+  .ai-medical-checkout-gate__toggle-switch-{{ ai_gen_id }}.active .ai-medical-checkout-gate__toggle-knob-{{ ai_gen_id }} {
+    transform: translateX(28px);
+  }
+
+  .ai-medical-checkout-gate__toggle-text-{{ ai_gen_id }} {
+    font-size: {{ block.settings.toggle_text_size }}px;
+    color: {{ block.settings.text_color }};
+    font-weight: 500;
+  }
+
+  .ai-medical-checkout-gate__buttons-{{ ai_gen_id }} {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: {{ block.settings.alignment }};
+  }
+
+  .ai-medical-checkout-gate__button-{{ ai_gen_id }} {
+    padding: {{ block.settings.button_padding_vertical }}px {{ block.settings.button_padding_horizontal }}px;
+    border: none;
+    border-radius: {{ block.settings.button_border_radius }}px;
+    font-size: {{ block.settings.button_font_size }}px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+    width: {{ block.settings.button_width }}%;
+    max-width: 100%;
+    text-align: center;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .ai-medical-checkout-gate__button--primary-{{ ai_gen_id }} {
+    background-color: {{ block.settings.primary_button_bg }};
+    color: {{ block.settings.primary_button_text }};
+  }
+
+  .ai-medical-checkout-gate__button--primary-{{ ai_gen_id }}:hover {
+    background-color: {{ block.settings.primary_button_hover_bg }};
+  }
+
+  .ai-medical-checkout-gate__button--secondary-{{ ai_gen_id }} {
+    background-color: {{ block.settings.secondary_button_bg }};
+    color: {{ block.settings.secondary_button_text }};
+  }
+
+  .ai-medical-checkout-gate__button--secondary-{{ ai_gen_id }}:hover {
+    background-color: {{ block.settings.secondary_button_hover_bg }};
+  }
+
+  .ai-medical-checkout-gate__button--signin-{{ ai_gen_id }} {
+    background-color: {{ block.settings.signin_button_bg }};
+    color: {{ block.settings.signin_button_color }};
+  }
+
+  .ai-medical-checkout-gate__button--signin-{{ ai_gen_id }}:hover {
+    background-color: {{ block.settings.signin_button_hover_bg }};
+  }
+
+  .ai-medical-checkout-gate__link-{{ ai_gen_id }} {
+    display: inline-block;
+    margin-top: 16px;
+    color: {{ block.settings.link_color }};
+    font-size: {{ block.settings.link_font_size }}px;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  .ai-medical-checkout-gate__link-{{ ai_gen_id }}:hover {
+    color: {{ block.settings.link_hover_color }};
+  }
+
+  .ai-medical-checkout-gate__hidden-{{ ai_gen_id }} {
+    display: none !important;
+  }
+
+  @media screen and (max-width: 749px) {
+    .ai-medical-checkout-gate-{{ ai_gen_id }} {
+      width: 100%;
+    }
+
+    .ai-medical-checkout-gate__button-{{ ai_gen_id }} {
+      width: 100%;
+    }
+  }
+{% endstyle %}
+
+<medical-checkout-gate-{{ ai_gen_id }}
+  class="ai-medical-checkout-gate-{{ ai_gen_id }}"
+  data-customer-logged-in="{{ customer }}"
+  {{ block.shopify_attributes }}
+>
+  {% if customer %}
+    {% liquid
+      assign has_green_flag = false
+      assign has_red_flag = false
+      
+      for tag in customer.tags
+        if tag contains 'green-flag' or tag contains 'green_flag' or tag contains 'auto-clear' or tag contains 'auto_clear'
+          assign has_green_flag = true
+        endif
+        if tag contains 'red-flag' or tag contains 'red_flag'
+          assign has_red_flag = true
+        endif
+      endfor
+    %}
+
+    {% if has_green_flag == false and has_red_flag == false %}
+      <div class="ai-medical-checkout-gate__message-{{ ai_gen_id }} ai-medical-checkout-gate__message--warning-{{ ai_gen_id }}">
+        {{ block.settings.no_tags_message }}
+      </div>
+    {% endif %}
+
+    {% if has_green_flag %}
+      <div class="ai-medical-checkout-gate__message-{{ ai_gen_id }} ai-medical-checkout-gate__message--success-{{ ai_gen_id }}">
+        {{ block.settings.green_flag_message }}
+      </div>
+
+      <div class="ai-medical-checkout-gate__toggle-wrapper-{{ ai_gen_id }}">
+        <label class="ai-medical-checkout-gate__toggle-label-{{ ai_gen_id }}">
+          {{ block.settings.toggle_question }}
+        </label>
+        <div class="ai-medical-checkout-gate__toggle-container-{{ ai_gen_id }}">
+          <div class="ai-medical-checkout-gate__toggle-switch-{{ ai_gen_id }} active" data-toggle>
+            <div class="ai-medical-checkout-gate__toggle-knob-{{ ai_gen_id }}"></div>
+          </div>
+          <span class="ai-medical-checkout-gate__toggle-text-{{ ai_gen_id }}" data-toggle-text>Yes</span>
+        </div>
+      </div>
+
+      <div class="ai-medical-checkout-gate__buttons-{{ ai_gen_id }}">
+        <a
+          href="/checkout"
+          class="ai-medical-checkout-gate__button-{{ ai_gen_id }} ai-medical-checkout-gate__button--primary-{{ ai_gen_id }}"
+          data-checkout-button
+        >
+          {{ block.settings.proceed_button_text }}
+        </a>
+
+        <button
+          type="button"
+          class="ai-medical-checkout-gate__button-{{ ai_gen_id }} ai-medical-checkout-gate__button--secondary-{{ ai_gen_id }} ai-medical-checkout-gate__hidden-{{ ai_gen_id }}"
+          data-update-button
+        >
+          {{ block.settings.update_button_text }}
+        </button>
+      </div>
+    {% endif %}
+
+    {% if has_red_flag %}
+      <div class="ai-medical-checkout-gate__message-{{ ai_gen_id }} ai-medical-checkout-gate__message--error-{{ ai_gen_id }}">
+        {{ block.settings.red_flag_message }}
+      </div>
+
+      <div class="ai-medical-checkout-gate__buttons-{{ ai_gen_id }}">
+        <button
+          type="button"
+          class="ai-medical-checkout-gate__button-{{ ai_gen_id }} ai-medical-checkout-gate__button--secondary-{{ ai_gen_id }}"
+          data-update-button
+        >
+          {{ block.settings.update_button_text }}
+        </button>
+      </div>
+    {% endif %}
+
+    {% if block.settings.show_guest_checkout_link %}
+      <a
+        href="#"
+        class="ai-medical-checkout-gate__link-{{ ai_gen_id }}"
+        data-guest-link
+      >
+        {{ block.settings.guest_checkout_text }}
+      </a>
+    {% endif %}
+
+  {% else %}
+    <div class="ai-medical-checkout-gate__instruction-{{ ai_gen_id }}">
+      {{ block.settings.signin_instruction }}
+    </div>
+
+    <div class="ai-medical-checkout-gate__buttons-{{ ai_gen_id }}">
+      <a
+        href="/account/login"
+        class="ai-medical-checkout-gate__button-{{ ai_gen_id }} ai-medical-checkout-gate__button--signin-{{ ai_gen_id }}"
+      >
+        {{ block.settings.signin_label }}
+      </a>
+    </div>
+
+    {% if block.settings.show_guest_checkout_link %}
+      <a
+        href="#"
+        class="ai-medical-checkout-gate__link-{{ ai_gen_id }}"
+        data-guest-link
+      >
+        {{ block.settings.guest_checkout_text }}
+      </a>
+    {% endif %}
+  {% endif %}
+
+  {% if block.settings.enable_custom_form %}
+    <div class="upform-container" style="display: none !important;" data-id="a6e76e"></div>
+  {% endif %}
+
+  {% if block.settings.custom_liquid != blank %}
+    {{ block.settings.custom_liquid }}
+  {% endif %}
+</medical-checkout-gate-{{ ai_gen_id }}>
+
+<script>
+  (function() {
+    class MedicalCheckoutGate{{ ai_gen_id }} extends HTMLElement {
+      constructor() {
+        super();
+        this.toggleSwitch = this.querySelector('[data-toggle]');
+        this.toggleText = this.querySelector('[data-toggle-text]');
+        this.checkoutButton = this.querySelector('[data-checkout-button]');
+        this.updateButton = this.querySelector('[data-update-button]');
+        this.guestLink = this.querySelector('[data-guest-link]');
+        this.isInfoSame = true;
+      }
+
+      connectedCallback() {
+        this.setupEventListeners();
+      }
+
+      setupEventListeners() {
+        if (this.toggleSwitch) {
+          this.toggleSwitch.addEventListener('click', () => {
+            this.handleToggle();
+          });
+        }
+
+        if (this.updateButton) {
+          this.updateButton.addEventListener('click', () => {
+            this.showMedicalForm();
+          });
+        }
+
+        if (this.guestLink) {
+          this.guestLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.showMedicalForm();
+          });
+        }
+      }
+
+      handleToggle() {
+        this.isInfoSame = !this.isInfoSame;
+        this.toggleSwitch.classList.toggle('active');
+
+        if (this.isInfoSame) {
+          this.toggleText.textContent = 'Yes';
+          this.checkoutButton.classList.remove('ai-medical-checkout-gate__hidden-{{ ai_gen_id }}');
+          this.updateButton.classList.add('ai-medical-checkout-gate__hidden-{{ ai_gen_id }}');
+        } else {
+          this.toggleText.textContent = 'No';
+          this.checkoutButton.classList.add('ai-medical-checkout-gate__hidden-{{ ai_gen_id }}');
+          this.updateButton.classList.remove('ai-medical-checkout-gate__hidden-{{ ai_gen_id }}');
+        }
+      }
+
+      showMedicalForm() {
+        const formContainer = document.querySelector('.upform-container[data-id="a6e76e"]');
+        if (formContainer) {
+          formContainer.style.display = 'block';
+          formContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
+    }
+
+    customElements.define('medical-checkout-gate-{{ ai_gen_id }}', MedicalCheckoutGate{{ ai_gen_id }});
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Medical checkout gate",
+  "tag": null,
+  "settings": [
+    {
+      "type": "header",
+      "content": "Layout"
+    },
+    {
+      "type": "select",
+      "id": "alignment",
+      "label": "Alignment",
+      "options": [
+        {
+          "value": "left",
+          "label": "Left"
+        },
+        {
+          "value": "center",
+          "label": "Center"
+        },
+        {
+          "value": "right",
+          "label": "Right"
+        }
+      ],
+      "default": "center"
+    },
+    {
+      "type": "range",
+      "id": "desktop_width_percent",
+      "label": "Desktop width",
+      "min": 50,
+      "max": 100,
+      "step": 5,
+      "unit": "%",
+      "default": 100
+    },
+    {
+      "type": "range",
+      "id": "container_padding",
+      "label": "Container padding",
+      "min": 0,
+      "max": 60,
+      "step": 4,
+      "unit": "px",
+      "default": 24
+    },
+    {
+      "type": "range",
+      "id": "border_radius",
+      "label": "Border radius",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 8
+    },
+    {
+      "type": "header",
+      "content": "Messages"
+    },
+    {
+      "type": "richtext",
+      "id": "signin_instruction",
+      "label": "Sign in instruction",
+      "default": "<p>Please sign in to verify your medical eligibility and proceed to checkout.</p>"
+    },
+    {
+      "type": "richtext",
+      "id": "green_flag_message",
+      "label": "Green flag message",
+      "default": "<p>Your medical eligibility has been verified. You are cleared to proceed.</p>"
+    },
+    {
+      "type": "richtext",
+      "id": "red_flag_message",
+      "label": "Red flag message",
+      "default": "<p>Your medical information requires review. Please update your medical check form or contact support.</p>"
+    },
+    {
+      "type": "richtext",
+      "id": "no_tags_message",
+      "label": "No tags message",
+      "default": "<p>Please submit the medical check form before proceeding to checkout.</p>"
+    },
+    {
+      "type": "header",
+      "content": "Toggle"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "toggle_question",
+      "label": "Toggle question",
+      "default": "Is your medical information still the same?"
+    },
+    {
+      "type": "range",
+      "id": "toggle_label_size",
+      "label": "Label size",
+      "min": 12,
+      "max": 24,
+      "step": 1,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "toggle_text_size",
+      "label": "Text size",
+      "min": 12,
+      "max": 20,
+      "step": 1,
+      "unit": "px",
+      "default": 14
+    },
+    {
+      "type": "color",
+      "id": "toggle_on_color",
+      "label": "Toggle on color",
+      "default": "#307a07"
+    },
+    {
+      "type": "color",
+      "id": "toggle_off_color",
+      "label": "Toggle off color",
+      "default": "#cccccc"
+    },
+    {
+      "type": "header",
+      "content": "Buttons"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "proceed_button_text",
+      "label": "Proceed button text",
+      "default": "Proceed to Checkout"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "update_button_text",
+      "label": "Update button text",
+      "default": "Update Medical Check"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "signin_label",
+      "label": "Sign in button text",
+      "default": "Sign In"
+    },
+    {
+      "type": "range",
+      "id": "button_width",
+      "label": "Button width",
+      "min": 20,
+      "max": 100,
+      "step": 5,
+      "unit": "%",
+      "default": 50
+    },
+    {
+      "type": "range",
+      "id": "button_font_size",
+      "label": "Button font size",
+      "min": 12,
+      "max": 20,
+      "step": 1,
+      "unit": "px",
+      "default": 14
+    },
+    {
+      "type": "range",
+      "id": "button_padding_vertical",
+      "label": "Button vertical padding",
+      "min": 8,
+      "max": 24,
+      "step": 2,
+      "unit": "px",
+      "default": 12
+    },
+    {
+      "type": "range",
+      "id": "button_padding_horizontal",
+      "label": "Button horizontal padding",
+      "min": 16,
+      "max": 48,
+      "step": 4,
+      "unit": "px",
+      "default": 24
+    },
+    {
+      "type": "range",
+      "id": "button_border_radius",
+      "label": "Button border radius",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 4
+    },
+    {
+      "type": "header",
+      "content": "Guest checkout"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_guest_checkout_link",
+      "label": "Show guest checkout link",
+      "default": true
+    },
+    {
+      "type": "inline_richtext",
+      "id": "guest_checkout_text",
+      "label": "Guest checkout text",
+      "default": "Checkout as guest"
+    },
+    {
+      "type": "header",
+      "content": "Custom form integration"
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_custom_form",
+      "label": "Enable custom form container",
+      "info": "Enables the upform-container div for medical check form",
+      "default": true
+    },
+    {
+      "type": "liquid",
+      "id": "custom_liquid",
+      "label": "Custom Liquid code",
+      "info": "Add custom form code or additional elements here"
+    },
+    {
+      "type": "header",
+      "content": "Colors"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text",
+      "default": "#1c1c1c"
+    },
+    {
+      "type": "color",
+      "id": "instruction_color",
+      "label": "Instruction text",
+      "default": "#1c1c1c"
+    },
+    {
+      "type": "color",
+      "id": "primary_button_bg",
+      "label": "Primary button background",
+      "default": "#b29964"
+    },
+    {
+      "type": "color",
+      "id": "primary_button_text",
+      "label": "Primary button text",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "primary_button_hover_bg",
+      "label": "Primary button hover",
+      "default": "#9a8355"
+    },
+    {
+      "type": "color",
+      "id": "secondary_button_bg",
+      "label": "Secondary button background",
+      "default": "#e7e2dc"
+    },
+    {
+      "type": "color",
+      "id": "secondary_button_text",
+      "label": "Secondary button text",
+      "default": "#1c1c1c"
+    },
+    {
+      "type": "color",
+      "id": "secondary_button_hover_bg",
+      "label": "Secondary button hover",
+      "default": "#d4cdc4"
+    },
+    {
+      "type": "color",
+      "id": "signin_button_bg",
+      "label": "Sign in button background",
+      "default": "#b29964"
+    },
+    {
+      "type": "color",
+      "id": "signin_button_color",
+      "label": "Sign in button text",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "signin_button_hover_bg",
+      "label": "Sign in button hover",
+      "default": "#9a8355"
+    },
+    {
+      "type": "color",
+      "id": "link_color",
+      "label": "Link color",
+      "default": "#b29964"
+    },
+    {
+      "type": "color",
+      "id": "link_hover_color",
+      "label": "Link hover color",
+      "default": "#9a8355"
+    },
+    {
+      "type": "header",
+      "content": "Message colors"
+    },
+    {
+      "type": "color",
+      "id": "success_bg_color",
+      "label": "Success background",
+      "default": "#d4edda"
+    },
+    {
+      "type": "color",
+      "id": "success_text_color",
+      "label": "Success text",
+      "default": "#155724"
+    },
+    {
+      "type": "color",
+      "id": "error_bg_color",
+      "label": "Error background",
+      "default": "#f8d7da"
+    },
+    {
+      "type": "color",
+      "id": "error_text_color",
+      "label": "Error text",
+      "default": "#721c24"
+    },
+    {
+      "type": "color",
+      "id": "warning_bg_color",
+      "label": "Warning background",
+      "default": "#fff3cd"
+    },
+    {
+      "type": "color",
+      "id": "warning_text_color",
+      "label": "Warning text",
+      "default": "#856404"
+    },
+    {
+      "type": "header",
+      "content": "Typography"
+    },
+    {
+      "type": "range",
+      "id": "instruction_font_size",
+      "label": "Instruction font size",
+      "min": 12,
+      "max": 24,
+      "step": 1,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "message_font_size",
+      "label": "Message font size",
+      "min": 12,
+      "max": 20,
+      "step": 1,
+      "unit": "px",
+      "default": 14
+    },
+    {
+      "type": "range",
+      "id": "link_font_size",
+      "label": "Link font size",
+      "min": 12,
+      "max": 18,
+      "step": 1,
+      "unit": "px",
+      "default": 14
+    }
+  ],
+  "presets": [
+    {
+      "name": "Medical checkout gate"
+    }
+  ]
+}
+{% endschema %}

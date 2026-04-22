@@ -1,0 +1,1035 @@
+{% doc %}
+  @prompt
+    A testimonial section that shows a carousel of reviews on at a time allow up to 6 reviews standard image for all , allow dynamic source for the text part and control layout, whether image is at top or bottom, Quote to accept dynamic source and remove rating
+{% enddoc %}
+{% assign ai_gen_id = block.id | replace: '_', '' | downcase %}
+
+{% style %}
+  .ai-testimonial-carousel-{{ ai_gen_id }} {
+    width: {{ block.settings.desktop_width_percent }}%;
+    max-width: 100%;
+    padding: 40px 20px;
+    background-color: {{ block.settings.background_color }};
+    border-radius: {{ block.settings.border_radius }}px;
+    display: block;
+  }
+
+  .ai-testimonial-carousel__container-{{ ai_gen_id }} {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .ai-testimonial-carousel__header-{{ ai_gen_id }} {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .ai-testimonial-carousel__title-{{ ai_gen_id }} {
+    font-size: {{ block.settings.title_size }}px;
+    color: {{ block.settings.text_color }};
+    margin: 0 0 12px;
+    text-transform: {{ block.settings.title_transform }};
+  }
+
+  .ai-testimonial-carousel__subtitle-{{ ai_gen_id }} {
+    font-size: {{ block.settings.subtitle_size }}px;
+    color: {{ block.settings.text_color }};
+    opacity: 0.8;
+    margin: 0;
+  }
+
+  .ai-testimonial-carousel__slides-{{ ai_gen_id }} {
+    position: relative;
+    overflow: hidden;
+    min-height: 300px;
+  }
+
+  .ai-testimonial-carousel__slide-{{ ai_gen_id }} {
+    display: none;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+  }
+
+  .ai-testimonial-carousel__slide-{{ ai_gen_id }}.active {
+    display: block;
+    opacity: 1;
+  }
+
+  .ai-testimonial-carousel__content-{{ ai_gen_id }} {
+    text-align: center;
+    padding: 0 20px;
+  }
+
+  .ai-testimonial-carousel__content-{{ ai_gen_id }}--image-bottom {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .ai-testimonial-carousel__image-wrapper-{{ ai_gen_id }} {
+    width: {{ block.settings.image_size }}px;
+    height: {{ block.settings.image_size }}px;
+    margin: 0 auto 24px;
+    border-radius: 50%;
+    overflow: hidden;
+    background-color: #f4f4f4;
+  }
+
+  .ai-testimonial-carousel__content-{{ ai_gen_id }}--image-bottom .ai-testimonial-carousel__image-wrapper-{{ ai_gen_id }} {
+    order: 10;
+    margin: 24px auto 0;
+  }
+
+  .ai-testimonial-carousel__image-wrapper-{{ ai_gen_id }} img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .ai-testimonial-carousel__image-placeholder-{{ ai_gen_id }} {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: {{ block.settings.placeholder_bg_color }};
+  }
+
+  .ai-testimonial-carousel__image-placeholder-{{ ai_gen_id }} svg {
+    width: 60%;
+    height: 60%;
+    opacity: 0.3;
+  }
+
+  .ai-testimonial-carousel__quote-{{ ai_gen_id }} {
+    font-size: {{ block.settings.quote_size }}px;
+    line-height: 1.6;
+    color: {{ block.settings.text_color }};
+    margin: 0 0 24px;
+    font-style: italic;
+  }
+
+  .ai-testimonial-carousel__author-{{ ai_gen_id }} {
+    font-size: {{ block.settings.author_size }}px;
+    font-weight: 600;
+    color: {{ block.settings.text_color }};
+    margin: 0 0 4px;
+  }
+
+  .ai-testimonial-carousel__role-{{ ai_gen_id }} {
+    font-size: {{ block.settings.role_size }}px;
+    color: {{ block.settings.text_color }};
+    opacity: 0.7;
+    margin: 0;
+  }
+
+  .ai-testimonial-carousel__controls-{{ ai_gen_id }} {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    margin-top: 40px;
+  }
+
+  .ai-testimonial-carousel__button-{{ ai_gen_id }} {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background-color: {{ block.settings.button_color }};
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s ease;
+  }
+
+  .ai-testimonial-carousel__button-{{ ai_gen_id }}:hover {
+    background-color: {{ block.settings.button_hover_color }};
+  }
+
+  .ai-testimonial-carousel__button-{{ ai_gen_id }} svg {
+    width: 20px;
+    height: 20px;
+    stroke: {{ block.settings.button_icon_color }};
+  }
+
+  .ai-testimonial-carousel__dots-{{ ai_gen_id }} {
+    display: flex;
+    gap: 8px;
+  }
+
+  .ai-testimonial-carousel__dot-{{ ai_gen_id }} {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: {{ block.settings.dot_color }};
+    opacity: 0.3;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .ai-testimonial-carousel__dot-{{ ai_gen_id }}.active {
+    opacity: 1;
+  }
+
+  .ai-testimonial-carousel__empty-state-{{ ai_gen_id }} {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 14px;
+  }
+
+  @media screen and (max-width: 749px) {
+    .ai-testimonial-carousel__title-{{ ai_gen_id }} {
+      font-size: calc({{ block.settings.title_size }}px * 0.8);
+    }
+
+    .ai-testimonial-carousel__quote-{{ ai_gen_id }} {
+      font-size: calc({{ block.settings.quote_size }}px * 0.9);
+    }
+  }
+{% endstyle %}
+
+<testimonial-carousel-{{ ai_gen_id }}
+  class="ai-testimonial-carousel-{{ ai_gen_id }}"
+  {{ block.shopify_attributes }}
+>
+  <div class="ai-testimonial-carousel__container-{{ ai_gen_id }}">
+    {% if block.settings.title != blank or block.settings.subtitle != blank %}
+      <div class="ai-testimonial-carousel__header-{{ ai_gen_id }}">
+        {% if block.settings.title != blank %}
+          <h2 class="ai-testimonial-carousel__title-{{ ai_gen_id }}">{{ block.settings.title }}</h2>
+        {% endif %}
+        {% if block.settings.subtitle != blank %}
+          <p class="ai-testimonial-carousel__subtitle-{{ ai_gen_id }}">{{ block.settings.subtitle }}</p>
+        {% endif %}
+      </div>
+    {% endif %}
+
+    {% assign has_testimonials = false %}
+    {% for i in (1..6) %}
+      {% assign source_key = 'testimonial_' | append: i | append: '_source' %}
+      {% assign name_key = 'testimonial_' | append: i | append: '_name' %}
+      {% assign quote_key = 'testimonial_' | append: i | append: '_quote' %}
+      {% assign metafield_key = 'testimonial_' | append: i | append: '_metafield' %}
+      
+      {% assign source = block.settings[source_key] %}
+      
+      {% if source == 'custom' %}
+        {% if block.settings[name_key] != blank or block.settings[quote_key] != blank %}
+          {% assign has_testimonials = true %}
+          {% break %}
+        {% endif %}
+      {% elsif source == 'metafield' %}
+        {% if block.settings[metafield_key] != blank %}
+          {% assign has_testimonials = true %}
+          {% break %}
+        {% endif %}
+      {% endif %}
+    {% endfor %}
+
+    {% if has_testimonials %}
+      <div class="ai-testimonial-carousel__slides-{{ ai_gen_id }}">
+        {% for i in (1..6) %}
+          {% assign source_key = 'testimonial_' | append: i | append: '_source' %}
+          {% assign name_key = 'testimonial_' | append: i | append: '_name' %}
+          {% assign role_key = 'testimonial_' | append: i | append: '_role' %}
+          {% assign quote_key = 'testimonial_' | append: i | append: '_quote' %}
+          {% assign metafield_key = 'testimonial_' | append: i | append: '_metafield' %}
+          {% assign name_metafield_key = 'testimonial_' | append: i | append: '_name_metafield' %}
+          {% assign role_metafield_key = 'testimonial_' | append: i | append: '_role_metafield' %}
+
+          {% assign source = block.settings[source_key] %}
+          {% assign name = '' %}
+          {% assign role = '' %}
+          {% assign quote = '' %}
+
+          {% if source == 'custom' %}
+            {% assign name = block.settings[name_key] %}
+            {% assign role = block.settings[role_key] %}
+            {% assign quote = block.settings[quote_key] %}
+          {% elsif source == 'metafield' %}
+            {% assign metafield_path = block.settings[metafield_key] %}
+            {% assign name_metafield_path = block.settings[name_metafield_key] %}
+            {% assign role_metafield_path = block.settings[role_metafield_key] %}
+            
+            {% if metafield_path != blank %}
+              {% assign metafield_parts = metafield_path | split: '.' %}
+              {% if metafield_parts.size == 2 %}
+                {% assign namespace = metafield_parts[0] %}
+                {% assign key = metafield_parts[1] %}
+                {% assign quote = product.metafields[namespace][key] %}
+              {% endif %}
+            {% endif %}
+            
+            {% if name_metafield_path != blank %}
+              {% assign name_parts = name_metafield_path | split: '.' %}
+              {% if name_parts.size == 2 %}
+                {% assign name_namespace = name_parts[0] %}
+                {% assign name_key_meta = name_parts[1] %}
+                {% assign name = product.metafields[name_namespace][name_key_meta] %}
+              {% endif %}
+            {% endif %}
+            
+            {% if role_metafield_path != blank %}
+              {% assign role_parts = role_metafield_path | split: '.' %}
+              {% if role_parts.size == 2 %}
+                {% assign role_namespace = role_parts[0] %}
+                {% assign role_key_meta = role_parts[1] %}
+                {% assign role = product.metafields[role_namespace][role_key_meta] %}
+              {% endif %}
+            {% endif %}
+          {% endif %}
+
+          {% if name != blank or quote != blank %}
+            <div
+              class="ai-testimonial-carousel__slide-{{ ai_gen_id }} {% if forloop.first %}active{% endif %}"
+              data-slide="{{ forloop.index }}"
+            >
+              <div class="ai-testimonial-carousel__content-{{ ai_gen_id }} {% if block.settings.image_position == 'bottom' %}ai-testimonial-carousel__content-{{ ai_gen_id }}--image-bottom{% endif %}">
+                <div class="ai-testimonial-carousel__image-wrapper-{{ ai_gen_id }}">
+                  {% if block.settings.testimonial_image %}
+                    <img
+                      src="{{ block.settings.testimonial_image | image_url: width: 200 }}"
+                      alt="{{ name | escape }}"
+                      loading="lazy"
+                      width="200"
+                      height="200"
+                    >
+                  {% else %}
+                    <div class="ai-testimonial-carousel__image-placeholder-{{ ai_gen_id }}">
+                      {{ 'image' | placeholder_svg_tag }}
+                    </div>
+                  {% endif %}
+                </div>
+
+                {% if quote != blank %}
+                  <blockquote class="ai-testimonial-carousel__quote-{{ ai_gen_id }}">
+                    "{{ quote }}"
+                  </blockquote>
+                {% endif %}
+
+                {% if name != blank %}
+                  <p class="ai-testimonial-carousel__author-{{ ai_gen_id }}">{{ name }}</p>
+                {% endif %}
+
+                {% if role != blank %}
+                  <p class="ai-testimonial-carousel__role-{{ ai_gen_id }}">{{ role }}</p>
+                {% endif %}
+              </div>
+            </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+
+      <div class="ai-testimonial-carousel__controls-{{ ai_gen_id }}">
+        <button
+          class="ai-testimonial-carousel__button-{{ ai_gen_id }} ai-testimonial-carousel__prev-{{ ai_gen_id }}"
+          aria-label="Previous testimonial"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M15 18l-6-6 6-6"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+
+        <div class="ai-testimonial-carousel__dots-{{ ai_gen_id }}"></div>
+
+        <button
+          class="ai-testimonial-carousel__button-{{ ai_gen_id }} ai-testimonial-carousel__next-{{ ai_gen_id }}"
+          aria-label="Next testimonial"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M9 18l6-6-6-6"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+      </div>
+    {% else %}
+      <div class="ai-testimonial-carousel__empty-state-{{ ai_gen_id }}">
+        Next, add testimonials to display customer reviews
+      </div>
+    {% endif %}
+  </div>
+</testimonial-carousel-{{ ai_gen_id }}>
+
+<script>
+  (function() {
+    class TestimonialCarousel{{ ai_gen_id }} extends HTMLElement {
+      constructor() {
+        super();
+        this.currentSlide = 0;
+        this.slides = [];
+        this.autoplayInterval = null;
+      }
+
+      connectedCallback() {
+        this.slides = Array.from(this.querySelectorAll('.ai-testimonial-carousel__slide-{{ ai_gen_id }}'));
+        
+        if (this.slides.length === 0) return;
+
+        this.prevButton = this.querySelector('.ai-testimonial-carousel__prev-{{ ai_gen_id }}');
+        this.nextButton = this.querySelector('.ai-testimonial-carousel__next-{{ ai_gen_id }}');
+        this.dotsContainer = this.querySelector('.ai-testimonial-carousel__dots-{{ ai_gen_id }}');
+
+        this.createDots();
+        this.setupEventListeners();
+        this.startAutoplay();
+      }
+
+      createDots() {
+        this.slides.forEach((slide, index) => {
+          const dot = document.createElement('button');
+          dot.classList.add('ai-testimonial-carousel__dot-{{ ai_gen_id }}');
+          if (index === 0) dot.classList.add('active');
+          dot.setAttribute('aria-label', `Go to testimonial ${index + 1}`);
+          dot.addEventListener('click', () => this.goToSlide(index));
+          this.dotsContainer.appendChild(dot);
+        });
+        this.dots = Array.from(this.dotsContainer.querySelectorAll('.ai-testimonial-carousel__dot-{{ ai_gen_id }}'));
+      }
+
+      setupEventListeners() {
+        this.prevButton.addEventListener('click', () => this.previousSlide());
+        this.nextButton.addEventListener('click', () => this.nextSlide());
+
+        this.addEventListener('mouseenter', () => this.stopAutoplay());
+        this.addEventListener('mouseleave', () => this.startAutoplay());
+      }
+
+      goToSlide(index) {
+        this.slides[this.currentSlide].classList.remove('active');
+        this.dots[this.currentSlide].classList.remove('active');
+
+        this.currentSlide = index;
+
+        this.slides[this.currentSlide].classList.add('active');
+        this.dots[this.currentSlide].classList.add('active');
+      }
+
+      nextSlide() {
+        const nextIndex = (this.currentSlide + 1) % this.slides.length;
+        this.goToSlide(nextIndex);
+      }
+
+      previousSlide() {
+        const prevIndex = (this.currentSlide - 1 + this.slides.length) % this.slides.length;
+        this.goToSlide(prevIndex);
+      }
+
+      startAutoplay() {
+        this.stopAutoplay();
+        this.autoplayInterval = setInterval(() => this.nextSlide(), {{ block.settings.autoplay_speed | times: 1000 }});
+      }
+
+      stopAutoplay() {
+        if (this.autoplayInterval) {
+          clearInterval(this.autoplayInterval);
+          this.autoplayInterval = null;
+        }
+      }
+
+      disconnectedCallback() {
+        this.stopAutoplay();
+      }
+    }
+
+    customElements.define('testimonial-carousel-{{ ai_gen_id }}', TestimonialCarousel{{ ai_gen_id }});
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Testimonial carousel",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Section heading"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Title",
+      "default": "What our customers say"
+    },
+    {
+      "type": "select",
+      "id": "title_transform",
+      "label": "Title casing",
+      "options": [
+        {
+          "value": "none",
+          "label": "Normal"
+        },
+        {
+          "value": "uppercase",
+          "label": "Uppercase"
+        },
+        {
+          "value": "lowercase",
+          "label": "Lowercase"
+        }
+      ],
+      "default": "none"
+    },
+    {
+      "type": "text",
+      "id": "subtitle",
+      "label": "Subtitle",
+      "default": "Trusted by thousands of happy customers"
+    },
+    {
+      "type": "header",
+      "content": "Layout"
+    },
+    {
+      "type": "select",
+      "id": "image_position",
+      "label": "Image position",
+      "options": [
+        {
+          "value": "top",
+          "label": "Top"
+        },
+        {
+          "value": "bottom",
+          "label": "Bottom"
+        }
+      ],
+      "default": "top"
+    },
+    {
+      "type": "header",
+      "content": "Image"
+    },
+    {
+      "type": "image_picker",
+      "id": "testimonial_image",
+      "label": "Standard image"
+    },
+    {
+      "type": "range",
+      "id": "image_size",
+      "label": "Image size",
+      "min": 60,
+      "max": 150,
+      "step": 10,
+      "unit": "px",
+      "default": 100
+    },
+    {
+      "type": "color",
+      "id": "placeholder_bg_color",
+      "label": "Placeholder background",
+      "default": "#f4f4f4"
+    },
+    {
+      "type": "header",
+      "content": "Testimonial 1"
+    },
+    {
+      "type": "select",
+      "id": "testimonial_1_source",
+      "label": "Content source",
+      "options": [
+        {
+          "value": "custom",
+          "label": "Custom text"
+        },
+        {
+          "value": "metafield",
+          "label": "Metafield"
+        }
+      ],
+      "default": "custom"
+    },
+    {
+      "type": "text",
+      "id": "testimonial_1_name",
+      "label": "Name",
+      "default": "Sarah Johnson",
+      "info": "Used when source is Custom text"
+    },
+    {
+      "type": "text",
+      "id": "testimonial_1_role",
+      "label": "Role or location",
+      "info": "Used when source is Custom text"
+    },
+    {
+      "type": "textarea",
+      "id": "testimonial_1_quote",
+      "label": "Quote",
+      "default": "This product has completely transformed my daily routine. I couldn't be happier with my purchase!",
+      "info": "Used when source is Custom text"
+    },
+    {
+      "type": "text",
+      "id": "testimonial_1_metafield",
+      "label": "Quote metafield",
+      "placeholder": "custom.testimonial_quote",
+      "info": "Format: namespace.key. Used when source is Metafield"
+    },
+    {
+      "type": "text",
+      "id": "testimonial_1_name_metafield",
+      "label": "Name metafield",
+      "placeholder": "custom.testimonial_name",
+      "info": "Format: namespace.key. Used when source is Metafield"
+    },
+    {
+      "type": "text",
+      "id": "testimonial_1_role_metafield",
+      "label": "Role metafield",
+      "placeholder": "custom.testimonial_role",
+      "info": "Format: namespace.key. Used when source is Metafield"
+    },
+    {
+      "type": "header",
+      "content": "Testimonial 2"
+    },
+    {
+      "type": "select",
+      "id": "testimonial_2_source",
+      "label": "Content source",
+      "options": [
+        {
+          "value": "custom",
+          "label": "Custom text"
+        },
+        {
+          "value": "metafield",
+          "label": "Metafield"
+        }
+      ],
+      "default": "custom"
+    },
+    {
+      "type": "text",
+      "id": "testimonial_2_name",
+      "label": "Name",
+      "default": "Michael Chen",
+      "info": "Used when source is Custom text"
+    },
+    {
+      "type": "text",
+      "id": "testimonial_2_role",
+      "label": "Role or location",
+      "info": "Used when source is Custom text"
+    },
+    {
+      "type": "textarea",
+      "id": "testimonial_2_quote",
+      "label": "Quote",
+      "default": "Outstanding quality and excellent customer service. Highly recommend to anyone looking for premium products.",
+      "info": "Used when source is Custom text"
+    },
+    {
+      "type": "text",
+      "id": "testimonial_2_metafield",
+      "label": "Quote metafield",
+      "placeholder": "custom.testimonial_quote",
+      "info": "Format: namespace.key. Used when source is Metafield"
+    },
+    {
+      "type": "text",
+      "id": "testimonial_2_name_metafield",
+      "label": "Name metafield",
+      "placeholder": "custom.testimonial_name",
+      "info": "Format: namespace.key. Used when source is Metafield"
+    },
+    {
+      "type": "text",
+      "id": "testimonial_2_role_metafield",
+      "label": "Role metafield",
+      "placeholder": "custom.testimonial_role",
+      "info": "Format: namespace.key. Used when source is Metafield"
+    },
+    {
+      "type": "header",
+      "content": "Testimonial 3"
+    },
+    {
+      "type": "select",
+      "id": "testimonial_3_source",
+      "label": "Content source",
+      "options": [
+        {
+          "value": "custom",
+          "label": "Custom text"
+        },
+        {
+          "value": "metafield",
+          "label": "Metafield"
+        }
+      ],
+      "default": "custom"
+    },
+    {
+      "type": "text",
+      "id": "testimonial_3_name",
+      "label": "Name",
+      "default": "Emma Williams",
+      "info": "Used when source is Custom text"
+    },
+    {
+      "type": "text",
+      "id": "testimonial_3_role",
+      "label": "Role or location",
+      "info": "Used when source is Custom text"
+    },
+    {
+      "type": "textarea",
+      "id": "testimonial_3_quote",
+      "label": "Quote",
+      "default": "I've tried many similar products, but this one stands out. The results speak for themselves!",
+      "info": "Used when source is Custom text"
+    },
+    {
+      "type": "text",
+      "id": "testimonial_3_metafield",
+      "label": "Quote metafield",
+      "placeholder": "custom.testimonial_quote",
+      "info": "Format: namespace.key. Used when source is Metafield"
+    },
+    {
+      "type": "text",
+      "id": "testimonial_3_name_metafield",
+      "label": "Name metafield",
+      "placeholder": "custom.testimonial_name",
+      "info": "Format: namespace.key. Used when source is Metafield"
+    },
+    {
+      "type": "text",
+      "id": "testimonial_3_role_metafield",
+      "label": "Role metafield",
+      "placeholder": "custom.testimonial_role",
+      "info": "Format: namespace.key. Used when source is Metafield"
+    },
+    {
+      "type": "header",
+      "content": "Testimonial 4"
+    },
+    {
+      "type": "select",
+      "id": "testimonial_4_source",
+      "label": "Content source",
+      "options": [
+        {
+          "value": "custom",
+          "label": "Custom text"
+        },
+        {
+          "value": "metafield",
+          "label": "Metafield"
+        }
+      ],
+      "default": "custom"
+    },
+    {
+      "type": "text",
+      "id": "testimonial_4_name",
+      "label": "Name",
+      "info": "Used when source is Custom text"
+    },
+    {
+      "type": "text",
+      "id": "testimonial_4_role",
+      "label": "Role or location",
+      "info": "Used when source is Custom text"
+    },
+    {
+      "type": "textarea",
+      "id": "testimonial_4_quote",
+      "label": "Quote",
+      "info": "Used when source is Custom text"
+    },
+    {
+      "type": "text",
+      "id": "testimonial_4_metafield",
+      "label": "Quote metafield",
+      "placeholder": "custom.testimonial_quote",
+      "info": "Format: namespace.key. Used when source is Metafield"
+    },
+    {
+      "type": "text",
+      "id": "testimonial_4_name_metafield",
+      "label": "Name metafield",
+      "placeholder": "custom.testimonial_name",
+      "info": "Format: namespace.key. Used when source is Metafield"
+    },
+    {
+      "type": "text",
+      "id": "testimonial_4_role_metafield",
+      "label": "Role metafield",
+      "placeholder": "custom.testimonial_role",
+      "info": "Format: namespace.key. Used when source is Metafield"
+    },
+    {
+      "type": "header",
+      "content": "Testimonial 5"
+    },
+    {
+      "type": "select",
+      "id": "testimonial_5_source",
+      "label": "Content source",
+      "options": [
+        {
+          "value": "custom",
+          "label": "Custom text"
+        },
+        {
+          "value": "metafield",
+          "label": "Metafield"
+        }
+      ],
+      "default": "custom"
+    },
+    {
+      "type": "text",
+      "id": "testimonial_5_name",
+      "label": "Name",
+      "info": "Used when source is Custom text"
+    },
+    {
+      "type": "text",
+      "id": "testimonial_5_role",
+      "label": "Role or location",
+      "info": "Used when source is Custom text"
+    },
+    {
+      "type": "textarea",
+      "id": "testimonial_5_quote",
+      "label": "Quote",
+      "info": "Used when source is Custom text"
+    },
+    {
+      "type": "text",
+      "id": "testimonial_5_metafield",
+      "label": "Quote metafield",
+      "placeholder": "custom.testimonial_quote",
+      "info": "Format: namespace.key. Used when source is Metafield"
+    },
+    {
+      "type": "text",
+      "id": "testimonial_5_name_metafield",
+      "label": "Name metafield",
+      "placeholder": "custom.testimonial_name",
+      "info": "Format: namespace.key. Used when source is Metafield"
+    },
+    {
+      "type": "text",
+      "id": "testimonial_5_role_metafield",
+      "label": "Role metafield",
+      "placeholder": "custom.testimonial_role",
+      "info": "Format: namespace.key. Used when source is Metafield"
+    },
+    {
+      "type": "header",
+      "content": "Testimonial 6"
+    },
+    {
+      "type": "select",
+      "id": "testimonial_6_source",
+      "label": "Content source",
+      "options": [
+        {
+          "value": "custom",
+          "label": "Custom text"
+        },
+        {
+          "value": "metafield",
+          "label": "Metafield"
+        }
+      ],
+      "default": "custom"
+    },
+    {
+      "type": "text",
+      "id": "testimonial_6_name",
+      "label": "Name",
+      "info": "Used when source is Custom text"
+    },
+    {
+      "type": "text",
+      "id": "testimonial_6_role",
+      "label": "Role or location",
+      "info": "Used when source is Custom text"
+    },
+    {
+      "type": "textarea",
+      "id": "testimonial_6_quote",
+      "label": "Quote",
+      "info": "Used when source is Custom text"
+    },
+    {
+      "type": "text",
+      "id": "testimonial_6_metafield",
+      "label": "Quote metafield",
+      "placeholder": "custom.testimonial_quote",
+      "info": "Format: namespace.key. Used when source is Metafield"
+    },
+    {
+      "type": "text",
+      "id": "testimonial_6_name_metafield",
+      "label": "Name metafield",
+      "placeholder": "custom.testimonial_name",
+      "info": "Format: namespace.key. Used when source is Metafield"
+    },
+    {
+      "type": "text",
+      "id": "testimonial_6_role_metafield",
+      "label": "Role metafield",
+      "placeholder": "custom.testimonial_role",
+      "info": "Format: namespace.key. Used when source is Metafield"
+    },
+    {
+      "type": "header",
+      "content": "Style"
+    },
+    {
+      "type": "range",
+      "id": "desktop_width_percent",
+      "label": "Desktop width",
+      "min": 50,
+      "max": 100,
+      "step": 5,
+      "unit": "%",
+      "default": 100
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background color",
+      "default": "#f9f9f9"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text color",
+      "default": "#1c1c1c"
+    },
+    {
+      "type": "range",
+      "id": "border_radius",
+      "label": "Border radius",
+      "min": 0,
+      "max": 40,
+      "step": 4,
+      "unit": "px",
+      "default": 12
+    },
+    {
+      "type": "range",
+      "id": "title_size",
+      "label": "Title size",
+      "min": 20,
+      "max": 50,
+      "step": 2,
+      "unit": "px",
+      "default": 32
+    },
+    {
+      "type": "range",
+      "id": "subtitle_size",
+      "label": "Subtitle size",
+      "min": 12,
+      "max": 24,
+      "step": 1,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "quote_size",
+      "label": "Quote size",
+      "min": 14,
+      "max": 28,
+      "step": 1,
+      "unit": "px",
+      "default": 18
+    },
+    {
+      "type": "range",
+      "id": "author_size",
+      "label": "Author size",
+      "min": 12,
+      "max": 22,
+      "step": 1,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "role_size",
+      "label": "Role size",
+      "min": 10,
+      "max": 18,
+      "step": 1,
+      "unit": "px",
+      "default": 14
+    },
+    {
+      "type": "header",
+      "content": "Controls"
+    },
+    {
+      "type": "color",
+      "id": "button_color",
+      "label": "Button background",
+      "default": "#1c1c1c"
+    },
+    {
+      "type": "color",
+      "id": "button_hover_color",
+      "label": "Button hover background",
+      "default": "#333333"
+    },
+    {
+      "type": "color",
+      "id": "button_icon_color",
+      "label": "Button icon color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "dot_color",
+      "label": "Dot color",
+      "default": "#1c1c1c"
+    },
+    {
+      "type": "range",
+      "id": "autoplay_speed",
+      "label": "Autoplay speed",
+      "min": 3,
+      "max": 10,
+      "step": 1,
+      "unit": "s",
+      "default": 5
+    }
+  ],
+  "presets": [
+    {
+      "name": "Testimonial carousel"
+    }
+  ]
+}
+{% endschema %}

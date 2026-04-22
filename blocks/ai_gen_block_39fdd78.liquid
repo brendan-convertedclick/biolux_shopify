@@ -1,0 +1,499 @@
+{% doc %}
+  @prompt
+    add the product metafields
+{% enddoc %}
+{% assign ai_gen_id = block.id | replace: '_', '' | downcase %}
+
+{% style %}
+  .ai-product-metafields-{{ ai_gen_id }} {
+    display: block;
+    width: {{ block.settings.desktop_width_percent }}%;
+    max-width: 100%;
+    padding: {{ block.settings.padding }}px;
+    background-color: {{ block.settings.background_color }};
+    border-radius: {{ block.settings.border_radius }}px;
+  }
+
+  .ai-product-metafields__title-{{ ai_gen_id }} {
+    font-size: {{ block.settings.title_size }}px;
+    color: {{ block.settings.title_color }};
+    margin: 0 0 {{ block.settings.spacing }}px 0;
+    text-transform: {{ block.settings.title_transform }};
+  }
+
+  .ai-product-metafields__list-{{ ai_gen_id }} {
+    display: flex;
+    flex-direction: column;
+    gap: {{ block.settings.spacing }}px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .ai-product-metafields__item-{{ ai_gen_id }} {
+    display: flex;
+    flex-direction: {{ block.settings.layout }};
+    gap: {{ block.settings.item_gap }}px;
+    padding: {{ block.settings.item_padding }}px;
+    background-color: {{ block.settings.item_background }};
+    border-radius: {{ block.settings.item_border_radius }}px;
+    border: 1px solid {{ block.settings.item_border_color }};
+  }
+
+  .ai-product-metafields__label-{{ ai_gen_id }} {
+    font-weight: {{ block.settings.label_weight }};
+    color: {{ block.settings.label_color }};
+    font-size: {{ block.settings.label_size }}px;
+    {% if block.settings.layout == 'row' %}
+      min-width: {{ block.settings.label_width }}px;
+    {% endif %}
+  }
+
+  .ai-product-metafields__value-{{ ai_gen_id }} {
+    color: {{ block.settings.value_color }};
+    font-size: {{ block.settings.value_size }}px;
+    flex: 1;
+  }
+
+  .ai-product-metafields__empty-{{ ai_gen_id }} {
+    color: {{ block.settings.label_color }};
+    opacity: 0.6;
+    font-style: italic;
+    padding: {{ block.settings.padding }}px;
+    text-align: center;
+  }
+
+  @media screen and (max-width: 749px) {
+    .ai-product-metafields-{{ ai_gen_id }} {
+      width: 100%;
+    }
+
+    .ai-product-metafields__item-{{ ai_gen_id }} {
+      flex-direction: column;
+    }
+
+    .ai-product-metafields__label-{{ ai_gen_id }} {
+      min-width: auto;
+    }
+  }
+{% endstyle %}
+
+<product-metafields-{{ ai_gen_id }}
+  class="ai-product-metafields-{{ ai_gen_id }}"
+  {{ block.shopify_attributes }}
+>
+  {% liquid
+    assign has_metafields = false
+    assign metafield_1 = product.metafields[block.settings.metafield_1_namespace][block.settings.metafield_1_key]
+    assign metafield_2 = product.metafields[block.settings.metafield_2_namespace][block.settings.metafield_2_key]
+    assign metafield_3 = product.metafields[block.settings.metafield_3_namespace][block.settings.metafield_3_key]
+    assign metafield_4 = product.metafields[block.settings.metafield_4_namespace][block.settings.metafield_4_key]
+    assign metafield_5 = product.metafields[block.settings.metafield_5_namespace][block.settings.metafield_5_key]
+
+    if metafield_1 != blank or metafield_2 != blank or metafield_3 != blank or metafield_4 != blank or metafield_5 != blank
+      assign has_metafields = true
+    endif
+  %}
+
+  {% if has_metafields %}
+    {% if block.settings.title != blank %}
+      <h3 class="ai-product-metafields__title-{{ ai_gen_id }}">{{ block.settings.title }}</h3>
+    {% endif %}
+
+    <ul class="ai-product-metafields__list-{{ ai_gen_id }}">
+      {% if metafield_1 != blank and block.settings.metafield_1_label != blank %}
+        <li class="ai-product-metafields__item-{{ ai_gen_id }}">
+          <span class="ai-product-metafields__label-{{ ai_gen_id }}">{{ block.settings.metafield_1_label }}</span>
+          <span class="ai-product-metafields__value-{{ ai_gen_id }}">{{ metafield_1 }}</span>
+        </li>
+      {% endif %}
+
+      {% if metafield_2 != blank and block.settings.metafield_2_label != blank %}
+        <li class="ai-product-metafields__item-{{ ai_gen_id }}">
+          <span class="ai-product-metafields__label-{{ ai_gen_id }}">{{ block.settings.metafield_2_label }}</span>
+          <span class="ai-product-metafields__value-{{ ai_gen_id }}">{{ metafield_2 }}</span>
+        </li>
+      {% endif %}
+
+      {% if metafield_3 != blank and block.settings.metafield_3_label != blank %}
+        <li class="ai-product-metafields__item-{{ ai_gen_id }}">
+          <span class="ai-product-metafields__label-{{ ai_gen_id }}">{{ block.settings.metafield_3_label }}</span>
+          <span class="ai-product-metafields__value-{{ ai_gen_id }}">{{ metafield_3 }}</span>
+        </li>
+      {% endif %}
+
+      {% if metafield_4 != blank and block.settings.metafield_4_label != blank %}
+        <li class="ai-product-metafields__item-{{ ai_gen_id }}">
+          <span class="ai-product-metafields__label-{{ ai_gen_id }}">{{ block.settings.metafield_4_label }}</span>
+          <span class="ai-product-metafields__value-{{ ai_gen_id }}">{{ metafield_4 }}</span>
+        </li>
+      {% endif %}
+
+      {% if metafield_5 != blank and block.settings.metafield_5_label != blank %}
+        <li class="ai-product-metafields__item-{{ ai_gen_id }}">
+          <span class="ai-product-metafields__label-{{ ai_gen_id }}">{{ block.settings.metafield_5_label }}</span>
+          <span class="ai-product-metafields__value-{{ ai_gen_id }}">{{ metafield_5 }}</span>
+        </li>
+      {% endif %}
+    </ul>
+  {% else %}
+    <div class="ai-product-metafields__empty-{{ ai_gen_id }}">
+      Configure metafields in the block settings
+    </div>
+  {% endif %}
+</product-metafields-{{ ai_gen_id }}>
+
+<script>
+  (function() {
+    class ProductMetafields{{ ai_gen_id }} extends HTMLElement {
+      constructor() {
+        super();
+      }
+
+      connectedCallback() {
+      }
+    }
+
+    customElements.define('product-metafields-{{ ai_gen_id }}', ProductMetafields{{ ai_gen_id }});
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Product metafields",
+  "tag": null,
+  "settings": [
+    {
+      "type": "header",
+      "content": "General"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Title"
+    },
+    {
+      "type": "select",
+      "id": "layout",
+      "label": "Layout",
+      "options": [
+        {
+          "value": "row",
+          "label": "Horizontal"
+        },
+        {
+          "value": "column",
+          "label": "Vertical"
+        }
+      ],
+      "default": "row"
+    },
+    {
+      "type": "range",
+      "id": "desktop_width_percent",
+      "label": "Desktop width",
+      "min": 50,
+      "max": 100,
+      "step": 5,
+      "unit": "%",
+      "default": 100
+    },
+    {
+      "type": "header",
+      "content": "Metafield 1"
+    },
+    {
+      "type": "text",
+      "id": "metafield_1_namespace",
+      "label": "Namespace"
+    },
+    {
+      "type": "text",
+      "id": "metafield_1_key",
+      "label": "Key"
+    },
+    {
+      "type": "text",
+      "id": "metafield_1_label",
+      "label": "Label"
+    },
+    {
+      "type": "header",
+      "content": "Metafield 2"
+    },
+    {
+      "type": "text",
+      "id": "metafield_2_namespace",
+      "label": "Namespace"
+    },
+    {
+      "type": "text",
+      "id": "metafield_2_key",
+      "label": "Key"
+    },
+    {
+      "type": "text",
+      "id": "metafield_2_label",
+      "label": "Label"
+    },
+    {
+      "type": "header",
+      "content": "Metafield 3"
+    },
+    {
+      "type": "text",
+      "id": "metafield_3_namespace",
+      "label": "Namespace"
+    },
+    {
+      "type": "text",
+      "id": "metafield_3_key",
+      "label": "Key"
+    },
+    {
+      "type": "text",
+      "id": "metafield_3_label",
+      "label": "Label"
+    },
+    {
+      "type": "header",
+      "content": "Metafield 4"
+    },
+    {
+      "type": "text",
+      "id": "metafield_4_namespace",
+      "label": "Namespace"
+    },
+    {
+      "type": "text",
+      "id": "metafield_4_key",
+      "label": "Key"
+    },
+    {
+      "type": "text",
+      "id": "metafield_4_label",
+      "label": "Label"
+    },
+    {
+      "type": "header",
+      "content": "Metafield 5"
+    },
+    {
+      "type": "text",
+      "id": "metafield_5_namespace",
+      "label": "Namespace"
+    },
+    {
+      "type": "text",
+      "id": "metafield_5_key",
+      "label": "Key"
+    },
+    {
+      "type": "text",
+      "id": "metafield_5_label",
+      "label": "Label"
+    },
+    {
+      "type": "header",
+      "content": "Style"
+    },
+    {
+      "type": "range",
+      "id": "padding",
+      "label": "Padding",
+      "min": 0,
+      "max": 50,
+      "step": 5,
+      "unit": "px",
+      "default": 20
+    },
+    {
+      "type": "range",
+      "id": "spacing",
+      "label": "Spacing between items",
+      "min": 5,
+      "max": 30,
+      "step": 5,
+      "unit": "px",
+      "default": 15
+    },
+    {
+      "type": "range",
+      "id": "item_gap",
+      "label": "Gap between label and value",
+      "min": 5,
+      "max": 30,
+      "step": 5,
+      "unit": "px",
+      "default": 10
+    },
+    {
+      "type": "range",
+      "id": "border_radius",
+      "label": "Border radius",
+      "min": 0,
+      "max": 20,
+      "step": 2,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background",
+      "default": "#ffffff"
+    },
+    {
+      "type": "header",
+      "content": "Title style"
+    },
+    {
+      "type": "range",
+      "id": "title_size",
+      "label": "Size",
+      "min": 12,
+      "max": 32,
+      "step": 2,
+      "unit": "px",
+      "default": 18
+    },
+    {
+      "type": "color",
+      "id": "title_color",
+      "label": "Color",
+      "default": "#1c1c1c"
+    },
+    {
+      "type": "select",
+      "id": "title_transform",
+      "label": "Text transform",
+      "options": [
+        {
+          "value": "none",
+          "label": "None"
+        },
+        {
+          "value": "uppercase",
+          "label": "Uppercase"
+        },
+        {
+          "value": "lowercase",
+          "label": "Lowercase"
+        }
+      ],
+      "default": "uppercase"
+    },
+    {
+      "type": "header",
+      "content": "Item style"
+    },
+    {
+      "type": "range",
+      "id": "item_padding",
+      "label": "Padding",
+      "min": 0,
+      "max": 30,
+      "step": 5,
+      "unit": "px",
+      "default": 10
+    },
+    {
+      "type": "range",
+      "id": "item_border_radius",
+      "label": "Border radius",
+      "min": 0,
+      "max": 20,
+      "step": 2,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "color",
+      "id": "item_background",
+      "label": "Background",
+      "default": "#f5f5f5"
+    },
+    {
+      "type": "color",
+      "id": "item_border_color",
+      "label": "Border color",
+      "default": "#e0e0e0"
+    },
+    {
+      "type": "header",
+      "content": "Label style"
+    },
+    {
+      "type": "range",
+      "id": "label_size",
+      "label": "Size",
+      "min": 10,
+      "max": 20,
+      "step": 1,
+      "unit": "px",
+      "default": 14
+    },
+    {
+      "type": "range",
+      "id": "label_width",
+      "label": "Width (horizontal layout)",
+      "min": 80,
+      "max": 200,
+      "step": 10,
+      "unit": "px",
+      "default": 120
+    },
+    {
+      "type": "select",
+      "id": "label_weight",
+      "label": "Weight",
+      "options": [
+        {
+          "value": "400",
+          "label": "Normal"
+        },
+        {
+          "value": "600",
+          "label": "Semi-bold"
+        },
+        {
+          "value": "700",
+          "label": "Bold"
+        }
+      ],
+      "default": "600"
+    },
+    {
+      "type": "color",
+      "id": "label_color",
+      "label": "Color",
+      "default": "#1c1c1c"
+    },
+    {
+      "type": "header",
+      "content": "Value style"
+    },
+    {
+      "type": "range",
+      "id": "value_size",
+      "label": "Size",
+      "min": 10,
+      "max": 20,
+      "step": 1,
+      "unit": "px",
+      "default": 14
+    },
+    {
+      "type": "color",
+      "id": "value_color",
+      "label": "Color",
+      "default": "#1c1c1c"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Product metafields"
+    }
+  ]
+}
+{% endschema %}

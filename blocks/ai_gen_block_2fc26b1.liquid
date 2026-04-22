@@ -1,0 +1,465 @@
+{% doc %}
+  @prompt
+    A toggle button that asks the user if the provided information is still the same. Below the toggle, there will be 22 buttons: one that says "Proceed to Checkout" if the toggle button is "Yes," and another that says "Update Medical Check."
+{% enddoc %}
+{% assign ai_gen_id = block.id | replace: '_', '' | downcase %}
+
+{% style %}
+  .ai-info-toggle-container-{{ ai_gen_id }} {
+    display: block;
+    width: {{ block.settings.desktop_width_percent }}%;
+    max-width: 100%;
+    padding: {{ block.settings.container_padding }}px;
+    background-color: {{ block.settings.background_color }};
+    border-radius: {{ block.settings.border_radius }}px;
+  }
+
+  .ai-info-toggle-question-{{ ai_gen_id }} {
+    font-size: {{ block.settings.question_font_size }}px;
+    color: {{ block.settings.text_color }};
+    margin: 0 0 {{ block.settings.spacing_below_question }}px;
+    font-weight: 600;
+  }
+
+  .ai-info-toggle-switch-wrapper-{{ ai_gen_id }} {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: {{ block.settings.spacing_below_toggle }}px;
+  }
+
+  .ai-info-toggle-switch-{{ ai_gen_id }} {
+    position: relative;
+    display: inline-block;
+    width: {{ block.settings.toggle_width }}px;
+    height: {{ block.settings.toggle_height }}px;
+  }
+
+  .ai-info-toggle-switch-{{ ai_gen_id }} input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .ai-info-toggle-slider-{{ ai_gen_id }} {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: {{ block.settings.toggle_off_color }};
+    transition: 0.3s;
+    border-radius: {{ block.settings.toggle_height }}px;
+  }
+
+  .ai-info-toggle-slider-{{ ai_gen_id }}:before {
+    position: absolute;
+    content: "";
+    height: calc({{ block.settings.toggle_height }}px - 8px);
+    width: calc({{ block.settings.toggle_height }}px - 8px);
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+  }
+
+  .ai-info-toggle-switch-{{ ai_gen_id }} input:checked + .ai-info-toggle-slider-{{ ai_gen_id }} {
+    background-color: {{ block.settings.toggle_on_color }};
+  }
+
+  .ai-info-toggle-switch-{{ ai_gen_id }} input:checked + .ai-info-toggle-slider-{{ ai_gen_id }}:before {
+    transform: translateX(calc({{ block.settings.toggle_width }}px - {{ block.settings.toggle_height }}px));
+  }
+
+  .ai-info-toggle-label-{{ ai_gen_id }} {
+    font-size: {{ block.settings.label_font_size }}px;
+    color: {{ block.settings.text_color }};
+    font-weight: 500;
+  }
+
+  .ai-info-toggle-buttons-{{ ai_gen_id }} {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .ai-info-toggle-button-{{ ai_gen_id }} {
+    flex: 1;
+    min-width: 200px;
+    padding: {{ block.settings.button_padding }}px;
+    border: none;
+    border-radius: {{ block.settings.button_border_radius }}px;
+    font-size: {{ block.settings.button_font_size }}px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .ai-info-toggle-button-{{ ai_gen_id }}--proceed {
+    background-color: {{ block.settings.proceed_button_color }};
+    color: {{ block.settings.proceed_button_text_color }};
+  }
+
+  .ai-info-toggle-button-{{ ai_gen_id }}--proceed:hover {
+    background-color: {{ block.settings.proceed_button_hover_color }};
+  }
+
+  .ai-info-toggle-button-{{ ai_gen_id }}--update {
+    background-color: {{ block.settings.update_button_color }};
+    color: {{ block.settings.update_button_text_color }};
+  }
+
+  .ai-info-toggle-button-{{ ai_gen_id }}--update:hover {
+    background-color: {{ block.settings.update_button_hover_color }};
+  }
+
+  .ai-info-toggle-button-{{ ai_gen_id }}.hidden {
+    display: none;
+  }
+
+  @media screen and (max-width: 749px) {
+    .ai-info-toggle-buttons-{{ ai_gen_id }} {
+      flex-direction: column;
+    }
+
+    .ai-info-toggle-button-{{ ai_gen_id }} {
+      min-width: 100%;
+    }
+  }
+{% endstyle %}
+
+<info-toggle-{{ ai_gen_id }} class="ai-info-toggle-container-{{ ai_gen_id }}" {{ block.shopify_attributes }}>
+  <h3 class="ai-info-toggle-question-{{ ai_gen_id }}">{{ block.settings.question_text }}</h3>
+
+  <div class="ai-info-toggle-switch-wrapper-{{ ai_gen_id }}">
+    <label class="ai-info-toggle-switch-{{ ai_gen_id }}">
+      <input type="checkbox" id="info-toggle-{{ ai_gen_id }}" checked>
+      <span class="ai-info-toggle-slider-{{ ai_gen_id }}"></span>
+    </label>
+    <span class="ai-info-toggle-label-{{ ai_gen_id }}" id="toggle-label-{{ ai_gen_id }}">{{ block.settings.yes_label }}</span>
+  </div>
+
+  <div class="ai-info-toggle-buttons-{{ ai_gen_id }}">
+    <a
+      href="{{ block.settings.proceed_link }}"
+      class="ai-info-toggle-button-{{ ai_gen_id }} ai-info-toggle-button-{{ ai_gen_id }}--proceed"
+      id="proceed-button-{{ ai_gen_id }}"
+    >
+      {{ block.settings.proceed_button_text }}
+    </a>
+    <a
+      href="{{ block.settings.update_link }}"
+      class="ai-info-toggle-button-{{ ai_gen_id }} ai-info-toggle-button-{{ ai_gen_id }}--update hidden"
+      id="update-button-{{ ai_gen_id }}"
+    >
+      {{ block.settings.update_button_text }}
+    </a>
+  </div>
+</info-toggle-{{ ai_gen_id }}>
+
+<script>
+  (function() {
+    class InfoToggle{{ ai_gen_id }} extends HTMLElement {
+      constructor() {
+        super();
+      }
+
+      connectedCallback() {
+        this.toggle = this.querySelector('#info-toggle-{{ ai_gen_id }}');
+        this.label = this.querySelector('#toggle-label-{{ ai_gen_id }}');
+        this.proceedButton = this.querySelector('#proceed-button-{{ ai_gen_id }}');
+        this.updateButton = this.querySelector('#update-button-{{ ai_gen_id }}');
+
+        this.yesLabel = '{{ block.settings.yes_label }}';
+        this.noLabel = '{{ block.settings.no_label }}';
+
+        this.setupEventListeners();
+      }
+
+      setupEventListeners() {
+        this.toggle.addEventListener('change', () => {
+          this.handleToggleChange();
+        });
+      }
+
+      handleToggleChange() {
+        if (this.toggle.checked) {
+          this.label.textContent = this.yesLabel;
+          this.proceedButton.classList.remove('hidden');
+          this.updateButton.classList.add('hidden');
+        } else {
+          this.label.textContent = this.noLabel;
+          this.proceedButton.classList.add('hidden');
+          this.updateButton.classList.remove('hidden');
+        }
+      }
+    }
+
+    customElements.define('info-toggle-{{ ai_gen_id }}', InfoToggle{{ ai_gen_id }});
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Information toggle",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Question"
+    },
+    {
+      "type": "text",
+      "id": "question_text",
+      "label": "Question text",
+      "default": "Is the provided information still the same?"
+    },
+    {
+      "type": "range",
+      "id": "question_font_size",
+      "label": "Question font size",
+      "min": 14,
+      "max": 32,
+      "step": 2,
+      "unit": "px",
+      "default": 20
+    },
+    {
+      "type": "range",
+      "id": "spacing_below_question",
+      "label": "Space below question",
+      "min": 8,
+      "max": 40,
+      "step": 4,
+      "unit": "px",
+      "default": 20
+    },
+    {
+      "type": "header",
+      "content": "Toggle"
+    },
+    {
+      "type": "text",
+      "id": "yes_label",
+      "label": "Yes label",
+      "default": "Yes"
+    },
+    {
+      "type": "text",
+      "id": "no_label",
+      "label": "No label",
+      "default": "No"
+    },
+    {
+      "type": "range",
+      "id": "label_font_size",
+      "label": "Label font size",
+      "min": 12,
+      "max": 24,
+      "step": 2,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "toggle_width",
+      "label": "Toggle width",
+      "min": 40,
+      "max": 80,
+      "step": 4,
+      "unit": "px",
+      "default": 60
+    },
+    {
+      "type": "range",
+      "id": "toggle_height",
+      "label": "Toggle height",
+      "min": 20,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 32
+    },
+    {
+      "type": "color",
+      "id": "toggle_on_color",
+      "label": "Toggle on color",
+      "default": "#b29964"
+    },
+    {
+      "type": "color",
+      "id": "toggle_off_color",
+      "label": "Toggle off color",
+      "default": "#cccccc"
+    },
+    {
+      "type": "range",
+      "id": "spacing_below_toggle",
+      "label": "Space below toggle",
+      "min": 16,
+      "max": 48,
+      "step": 4,
+      "unit": "px",
+      "default": 24
+    },
+    {
+      "type": "header",
+      "content": "Proceed button"
+    },
+    {
+      "type": "text",
+      "id": "proceed_button_text",
+      "label": "Button text",
+      "default": "Proceed to Checkout"
+    },
+    {
+      "type": "url",
+      "id": "proceed_link",
+      "label": "Button link"
+    },
+    {
+      "type": "color",
+      "id": "proceed_button_color",
+      "label": "Background color",
+      "default": "#b29964"
+    },
+    {
+      "type": "color",
+      "id": "proceed_button_text_color",
+      "label": "Text color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "proceed_button_hover_color",
+      "label": "Hover background color",
+      "default": "#9a8254"
+    },
+    {
+      "type": "header",
+      "content": "Update button"
+    },
+    {
+      "type": "text",
+      "id": "update_button_text",
+      "label": "Button text",
+      "default": "Update Medical Check"
+    },
+    {
+      "type": "url",
+      "id": "update_link",
+      "label": "Button link"
+    },
+    {
+      "type": "color",
+      "id": "update_button_color",
+      "label": "Background color",
+      "default": "#1c1c1c"
+    },
+    {
+      "type": "color",
+      "id": "update_button_text_color",
+      "label": "Text color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "update_button_hover_color",
+      "label": "Hover background color",
+      "default": "#000000"
+    },
+    {
+      "type": "header",
+      "content": "Button style"
+    },
+    {
+      "type": "range",
+      "id": "button_font_size",
+      "label": "Font size",
+      "min": 12,
+      "max": 24,
+      "step": 2,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "button_padding",
+      "label": "Padding",
+      "min": 8,
+      "max": 32,
+      "step": 2,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "button_border_radius",
+      "label": "Border radius",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 4
+    },
+    {
+      "type": "header",
+      "content": "Container"
+    },
+    {
+      "type": "range",
+      "id": "desktop_width_percent",
+      "label": "Desktop width",
+      "min": 50,
+      "max": 100,
+      "step": 5,
+      "unit": "%",
+      "default": 100
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text color",
+      "default": "#1c1c1c"
+    },
+    {
+      "type": "range",
+      "id": "container_padding",
+      "label": "Padding",
+      "min": 0,
+      "max": 60,
+      "step": 4,
+      "unit": "px",
+      "default": 32
+    },
+    {
+      "type": "range",
+      "id": "border_radius",
+      "label": "Border radius",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 8
+    }
+  ],
+  "presets": [
+    {
+      "name": "Information toggle"
+    }
+  ]
+}
+{% endschema %}

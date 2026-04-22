@@ -1,0 +1,1471 @@
+{% doc %}
+  @prompt
+    Create a **Shopify pre-checkout eligibility form** (step-by-step, one screen per step) with **Next/Previous** buttons and a **progress indicator**. Use a clean, professional medical UI and **validate required fields before allowing Next**. Admin should be able to **edit questions/options easily**.
+    
+    **Steps (in order):**
+    
+    1. **Identity (single step):** Full name (text), DOB (**date picker**), ID/Passport (text)
+    2. **Current health status (radio):** Great / Generally Okay / Not good
+    3. **Medical conditions (multi-select):** None (**exclusive**) / Heart Disease / Diabetes / Hypertension / Other (**shows required “Specify other” text box**)
+    4. **Medications/allergies (short text)**
+    5. **Main goal (radio):** Weight / Anti-aging / Gut / Energy / Injury / Immune / Other
+    6. **Pregnancy/breastfeeding (radio):** Yes / No
+    7. **Serious reaction history (radio):** “Have you ever had a serious reaction to any peptide, hormone or weight-loss injection?” Yes / No
+    8. **Consent (required checkbox):** “I confirm my information is true and I consent to doctor review.”
+    
+    **Eligibility gating:**
+    
+    * Health status must be **Great** or **Generally Okay**
+    * Medical conditions must be **None**
+    * Pregnancy/breastfeeding must be **No**
+    * Serious reaction must be **No**
+    
+    If ineligible, **hide the Continue/Checkout button** and show a clear disclaimer. If eligible, show a **Continue to Checkout** button that links to `/checkout`.
+    
+    **Data:** Save all submitted fields as a **Metaobject entry** (one entry per submission) containing every field + eligibility result + timestamp (and optionally customer/cart ID if available)
+    
+    As first step Ask user to sign in or continue as quest checkout. If or after signing in show a check box asking if the medical form answer are still the same. By defualt it should be checked if user unchecks show the form. For guest users always show form. Use Shopify forms and form id is 882437
+{% enddoc %}
+{% assign ai_gen_id = block.id | replace: '_', '' | downcase %}
+
+{% style %}
+  .ai-eligibility-form-{{ ai_gen_id }} {
+    display: block;
+    width: {{ block.settings.desktop_width_percent }}%;
+    max-width: 100%;
+    margin: 0 auto;
+    background-color: {{ block.settings.background_color }};
+    border-radius: {{ block.settings.border_radius }}px;
+    padding: 40px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  .ai-eligibility-form__header-{{ ai_gen_id }} {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .ai-eligibility-form__title-{{ ai_gen_id }} {
+    font-size: {{ block.settings.title_size }}px;
+    color: {{ block.settings.text_color }};
+    margin: 0 0 8px;
+    font-weight: 600;
+  }
+
+  .ai-eligibility-form__subtitle-{{ ai_gen_id }} {
+    font-size: {{ block.settings.subtitle_size }}px;
+    color: {{ block.settings.text_color }};
+    opacity: 0.7;
+    margin: 0;
+  }
+
+  .ai-eligibility-form__progress-{{ ai_gen_id }} {
+    margin-bottom: 32px;
+  }
+
+  .ai-eligibility-form__progress-bar-{{ ai_gen_id }} {
+    width: 100%;
+    height: 8px;
+    background-color: {{ block.settings.progress_bg_color }};
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+
+  .ai-eligibility-form__progress-fill-{{ ai_gen_id }} {
+    height: 100%;
+    background-color: {{ block.settings.progress_color }};
+    transition: width 0.3s ease;
+    border-radius: 4px;
+  }
+
+  .ai-eligibility-form__progress-text-{{ ai_gen_id }} {
+    text-align: center;
+    font-size: 14px;
+    color: {{ block.settings.text_color }};
+    opacity: 0.7;
+  }
+
+  .ai-eligibility-form__auth-step-{{ ai_gen_id }} {
+    display: none;
+    text-align: center;
+  }
+
+  .ai-eligibility-form__auth-step-{{ ai_gen_id }}.active {
+    display: block;
+  }
+
+  .ai-eligibility-form__auth-buttons-{{ ai_gen_id }} {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 400px;
+    margin: 24px auto;
+  }
+
+  .ai-eligibility-form__auth-button-{{ ai_gen_id }} {
+    padding: 16px 24px;
+    background-color: {{ block.settings.button_color }};
+    color: {{ block.settings.button_text_color }};
+    border: none;
+    border-radius: {{ block.settings.button_border_radius }}px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    text-decoration: none;
+    display: block;
+    text-align: center;
+    transition: background-color 0.3s ease;
+  }
+
+  .ai-eligibility-form__auth-button-{{ ai_gen_id }}:hover {
+    background-color: {{ block.settings.button_hover_color }};
+  }
+
+  .ai-eligibility-form__auth-button--secondary-{{ ai_gen_id }} {
+    background-color: transparent;
+    color: {{ block.settings.button_color }};
+    border: 2px solid {{ block.settings.button_color }};
+  }
+
+  .ai-eligibility-form__auth-button--secondary-{{ ai_gen_id }}:hover {
+    background-color: {{ block.settings.button_color }};
+    color: {{ block.settings.button_text_color }};
+  }
+
+  .ai-eligibility-form__checkbox-wrapper-{{ ai_gen_id }} {
+    margin-top: 24px;
+    padding: 16px;
+    background-color: {{ block.settings.field_bg_color }};
+    border-radius: 8px;
+  }
+
+  .ai-eligibility-form__checkbox-label-{{ ai_gen_id }} {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    font-size: 15px;
+    color: {{ block.settings.text_color }};
+  }
+
+  .ai-eligibility-form__checkbox-label-{{ ai_gen_id }} input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+  }
+
+  .ai-eligibility-form__step-{{ ai_gen_id }} {
+    display: none;
+  }
+
+  .ai-eligibility-form__step-{{ ai_gen_id }}.active {
+    display: block;
+  }
+
+  .ai-eligibility-form__field-group-{{ ai_gen_id }} {
+    margin-bottom: 24px;
+  }
+
+  .ai-eligibility-form__label-{{ ai_gen_id }} {
+    display: block;
+    font-size: 15px;
+    font-weight: 600;
+    color: {{ block.settings.text_color }};
+    margin-bottom: 8px;
+  }
+
+  .ai-eligibility-form__required-{{ ai_gen_id }} {
+    color: {{ block.settings.error_color }};
+    margin-left: 4px;
+  }
+
+  .ai-eligibility-form__input-{{ ai_gen_id }} {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid {{ block.settings.input_border_color }};
+    border-radius: {{ block.settings.input_border_radius }}px;
+    font-size: 15px;
+    background-color: {{ block.settings.field_bg_color }};
+    color: {{ block.settings.text_color }};
+  }
+
+  .ai-eligibility-form__input-{{ ai_gen_id }}:focus {
+    outline: none;
+    border-color: {{ block.settings.button_color }};
+  }
+
+  .ai-eligibility-form__radio-group-{{ ai_gen_id }},
+  .ai-eligibility-form__checkbox-group-{{ ai_gen_id }} {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .ai-eligibility-form__radio-option-{{ ai_gen_id }},
+  .ai-eligibility-form__checkbox-option-{{ ai_gen_id }} {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    background-color: {{ block.settings.field_bg_color }};
+    border: 2px solid {{ block.settings.input_border_color }};
+    border-radius: {{ block.settings.input_border_radius }}px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .ai-eligibility-form__radio-option-{{ ai_gen_id }}:hover,
+  .ai-eligibility-form__checkbox-option-{{ ai_gen_id }}:hover {
+    border-color: {{ block.settings.button_color }};
+  }
+
+  .ai-eligibility-form__radio-option-{{ ai_gen_id }}.selected,
+  .ai-eligibility-form__checkbox-option-{{ ai_gen_id }}.selected {
+    border-color: {{ block.settings.button_color }};
+    background-color: {{ block.settings.button_color }};
+    color: {{ block.settings.button_text_color }};
+  }
+
+  .ai-eligibility-form__radio-option-{{ ai_gen_id }} input[type="radio"],
+  .ai-eligibility-form__checkbox-option-{{ ai_gen_id }} input[type="checkbox"] {
+    margin-right: 12px;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+  }
+
+  .ai-eligibility-form__error-{{ ai_gen_id }} {
+    color: {{ block.settings.error_color }};
+    font-size: 13px;
+    margin-top: 4px;
+    display: none;
+  }
+
+  .ai-eligibility-form__error-{{ ai_gen_id }}.visible {
+    display: block;
+  }
+
+  .ai-eligibility-form__navigation-{{ ai_gen_id }} {
+    display: flex;
+    gap: 12px;
+    margin-top: 32px;
+  }
+
+  .ai-eligibility-form__nav-button-{{ ai_gen_id }} {
+    flex: 1;
+    padding: 14px 24px;
+    background-color: {{ block.settings.button_color }};
+    color: {{ block.settings.button_text_color }};
+    border: none;
+    border-radius: {{ block.settings.button_border_radius }}px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    transition: background-color 0.3s ease;
+  }
+
+  .ai-eligibility-form__nav-button-{{ ai_gen_id }}:hover:not(:disabled) {
+    background-color: {{ block.settings.button_hover_color }};
+  }
+
+  .ai-eligibility-form__nav-button-{{ ai_gen_id }}:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .ai-eligibility-form__nav-button--secondary-{{ ai_gen_id }} {
+    background-color: transparent;
+    color: {{ block.settings.button_color }};
+    border: 2px solid {{ block.settings.button_color }};
+  }
+
+  .ai-eligibility-form__nav-button--secondary-{{ ai_gen_id }}:hover:not(:disabled) {
+    background-color: {{ block.settings.button_color }};
+    color: {{ block.settings.button_text_color }};
+  }
+
+  .ai-eligibility-form__result-{{ ai_gen_id }} {
+    display: none;
+    text-align: center;
+    padding: 32px;
+  }
+
+  .ai-eligibility-form__result-{{ ai_gen_id }}.active {
+    display: block;
+  }
+
+  .ai-eligibility-form__result-icon-{{ ai_gen_id }} {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 16px;
+  }
+
+  .ai-eligibility-form__result-title-{{ ai_gen_id }} {
+    font-size: 24px;
+    font-weight: 600;
+    color: {{ block.settings.text_color }};
+    margin: 0 0 12px;
+  }
+
+  .ai-eligibility-form__result-message-{{ ai_gen_id }} {
+    font-size: 16px;
+    color: {{ block.settings.text_color }};
+    opacity: 0.8;
+    margin-bottom: 24px;
+  }
+
+  .ai-eligibility-form__checkout-button-{{ ai_gen_id }} {
+    display: inline-block;
+    padding: 16px 48px;
+    background-color: {{ block.settings.button_color }};
+    color: {{ block.settings.button_text_color }};
+    border: none;
+    border-radius: {{ block.settings.button_border_radius }}px;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+  }
+
+  .ai-eligibility-form__checkout-button-{{ ai_gen_id }}:hover {
+    background-color: {{ block.settings.button_hover_color }};
+  }
+
+  .ai-eligibility-form__disclaimer-{{ ai_gen_id }} {
+    background-color: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 16px;
+    color: #856404;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  @media screen and (max-width: 749px) {
+    .ai-eligibility-form-{{ ai_gen_id }} {
+      padding: 24px;
+      width: 100%;
+    }
+
+    .ai-eligibility-form__navigation-{{ ai_gen_id }} {
+      flex-direction: column;
+    }
+  }
+{% endstyle %}
+
+<eligibility-form-{{ ai_gen_id }}
+  class="ai-eligibility-form-{{ ai_gen_id }}"
+  data-form-id="882437"
+  {{ block.shopify_attributes }}
+>
+  <div class="ai-eligibility-form__header-{{ ai_gen_id }}">
+    <h2 class="ai-eligibility-form__title-{{ ai_gen_id }}">{{ block.settings.form_title }}</h2>
+    <p class="ai-eligibility-form__subtitle-{{ ai_gen_id }}">{{ block.settings.form_subtitle }}</p>
+  </div>
+
+  <div class="ai-eligibility-form__progress-{{ ai_gen_id }}">
+    <div class="ai-eligibility-form__progress-bar-{{ ai_gen_id }}">
+      <div class="ai-eligibility-form__progress-fill-{{ ai_gen_id }}" data-progress-fill></div>
+    </div>
+    <div class="ai-eligibility-form__progress-text-{{ ai_gen_id }}" data-progress-text>Step 1 of 9</div>
+  </div>
+
+  <div class="ai-eligibility-form__auth-step-{{ ai_gen_id }} active" data-step="auth">
+    <p style="font-size: 16px; margin-bottom: 24px; color: {{ block.settings.text_color }};">
+      {{ block.settings.auth_message }}
+    </p>
+    <div class="ai-eligibility-form__auth-buttons-{{ ai_gen_id }}">
+      <a href="/account/login" class="ai-eligibility-form__auth-button-{{ ai_gen_id }}">
+        {{ block.settings.sign_in_text }}
+      </a>
+      <button
+        type="button"
+        class="ai-eligibility-form__auth-button-{{ ai_gen_id }} ai-eligibility-form__auth-button--secondary-{{ ai_gen_id }}"
+        data-guest-continue
+      >
+        {{ block.settings.guest_text }}
+      </button>
+    </div>
+    {% if customer %}
+      <div class="ai-eligibility-form__checkbox-wrapper-{{ ai_gen_id }}">
+        <label class="ai-eligibility-form__checkbox-label-{{ ai_gen_id }}">
+          <input type="checkbox" checked data-same-answers>
+          <span>{{ block.settings.same_answers_text }}</span>
+        </label>
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="ai-eligibility-form__step-{{ ai_gen_id }}" data-step="1">
+    <div class="ai-eligibility-form__field-group-{{ ai_gen_id }}">
+      <label class="ai-eligibility-form__label-{{ ai_gen_id }}">
+        {{ block.settings.q1_full_name }}
+        <span class="ai-eligibility-form__required-{{ ai_gen_id }}">*</span>
+      </label>
+      <input
+        type="text"
+        class="ai-eligibility-form__input-{{ ai_gen_id }}"
+        data-field="full_name"
+        required
+      >
+      <div class="ai-eligibility-form__error-{{ ai_gen_id }}" data-error="full_name">This field is required</div>
+    </div>
+
+    <div class="ai-eligibility-form__field-group-{{ ai_gen_id }}">
+      <label class="ai-eligibility-form__label-{{ ai_gen_id }}">
+        {{ block.settings.q1_dob }}
+        <span class="ai-eligibility-form__required-{{ ai_gen_id }}">*</span>
+      </label>
+      <input
+        type="date"
+        class="ai-eligibility-form__input-{{ ai_gen_id }}"
+        data-field="dob"
+        required
+      >
+      <div class="ai-eligibility-form__error-{{ ai_gen_id }}" data-error="dob">This field is required</div>
+    </div>
+
+    <div class="ai-eligibility-form__field-group-{{ ai_gen_id }}">
+      <label class="ai-eligibility-form__label-{{ ai_gen_id }}">
+        {{ block.settings.q1_id_passport }}
+        <span class="ai-eligibility-form__required-{{ ai_gen_id }}">*</span>
+      </label>
+      <input
+        type="text"
+        class="ai-eligibility-form__input-{{ ai_gen_id }}"
+        data-field="id_passport"
+        required
+      >
+      <div class="ai-eligibility-form__error-{{ ai_gen_id }}" data-error="id_passport">This field is required</div>
+    </div>
+  </div>
+
+  <div class="ai-eligibility-form__step-{{ ai_gen_id }}" data-step="2">
+    <div class="ai-eligibility-form__field-group-{{ ai_gen_id }}">
+      <label class="ai-eligibility-form__label-{{ ai_gen_id }}">
+        {{ block.settings.q2_health_status }}
+        <span class="ai-eligibility-form__required-{{ ai_gen_id }}">*</span>
+      </label>
+      <div class="ai-eligibility-form__radio-group-{{ ai_gen_id }}">
+        <label class="ai-eligibility-form__radio-option-{{ ai_gen_id }}">
+          <input type="radio" name="health_status" value="Great" data-field="health_status" required>
+          <span>{{ block.settings.q2_option_1 }}</span>
+        </label>
+        <label class="ai-eligibility-form__radio-option-{{ ai_gen_id }}">
+          <input type="radio" name="health_status" value="Generally Okay" data-field="health_status">
+          <span>{{ block.settings.q2_option_2 }}</span>
+        </label>
+        <label class="ai-eligibility-form__radio-option-{{ ai_gen_id }}">
+          <input type="radio" name="health_status" value="Not good" data-field="health_status">
+          <span>{{ block.settings.q2_option_3 }}</span>
+        </label>
+      </div>
+      <div class="ai-eligibility-form__error-{{ ai_gen_id }}" data-error="health_status">Please select an option</div>
+    </div>
+  </div>
+
+  <div class="ai-eligibility-form__step-{{ ai_gen_id }}" data-step="3">
+    <div class="ai-eligibility-form__field-group-{{ ai_gen_id }}">
+      <label class="ai-eligibility-form__label-{{ ai_gen_id }}">
+        {{ block.settings.q3_medical_conditions }}
+        <span class="ai-eligibility-form__required-{{ ai_gen_id }}">*</span>
+      </label>
+      <div class="ai-eligibility-form__checkbox-group-{{ ai_gen_id }}">
+        <label class="ai-eligibility-form__checkbox-option-{{ ai_gen_id }}">
+          <input type="checkbox" value="None" data-field="medical_conditions" data-exclusive>
+          <span>{{ block.settings.q3_option_1 }}</span>
+        </label>
+        <label class="ai-eligibility-form__checkbox-option-{{ ai_gen_id }}">
+          <input type="checkbox" value="Heart Disease" data-field="medical_conditions">
+          <span>{{ block.settings.q3_option_2 }}</span>
+        </label>
+        <label class="ai-eligibility-form__checkbox-option-{{ ai_gen_id }}">
+          <input type="checkbox" value="Diabetes" data-field="medical_conditions">
+          <span>{{ block.settings.q3_option_3 }}</span>
+        </label>
+        <label class="ai-eligibility-form__checkbox-option-{{ ai_gen_id }}">
+          <input type="checkbox" value="Hypertension" data-field="medical_conditions">
+          <span>{{ block.settings.q3_option_4 }}</span>
+        </label>
+        <label class="ai-eligibility-form__checkbox-option-{{ ai_gen_id }}">
+          <input type="checkbox" value="Other" data-field="medical_conditions" data-show-other>
+          <span>{{ block.settings.q3_option_5 }}</span>
+        </label>
+      </div>
+      <div class="ai-eligibility-form__error-{{ ai_gen_id }}" data-error="medical_conditions">Please select at least one option</div>
+    </div>
+    <div class="ai-eligibility-form__field-group-{{ ai_gen_id }}" data-other-field style="display: none;">
+      <label class="ai-eligibility-form__label-{{ ai_gen_id }}">
+        {{ block.settings.q3_other_label }}
+        <span class="ai-eligibility-form__required-{{ ai_gen_id }}">*</span>
+      </label>
+      <input
+        type="text"
+        class="ai-eligibility-form__input-{{ ai_gen_id }}"
+        data-field="medical_conditions_other"
+      >
+      <div class="ai-eligibility-form__error-{{ ai_gen_id }}" data-error="medical_conditions_other">Please specify</div>
+    </div>
+  </div>
+
+  <div class="ai-eligibility-form__step-{{ ai_gen_id }}" data-step="4">
+    <div class="ai-eligibility-form__field-group-{{ ai_gen_id }}">
+      <label class="ai-eligibility-form__label-{{ ai_gen_id }}">
+        {{ block.settings.q4_medications }}
+      </label>
+      <input
+        type="text"
+        class="ai-eligibility-form__input-{{ ai_gen_id }}"
+        data-field="medications_allergies"
+        placeholder="{{ block.settings.q4_placeholder }}"
+      >
+    </div>
+  </div>
+
+  <div class="ai-eligibility-form__step-{{ ai_gen_id }}" data-step="5">
+    <div class="ai-eligibility-form__field-group-{{ ai_gen_id }}">
+      <label class="ai-eligibility-form__label-{{ ai_gen_id }}">
+        {{ block.settings.q5_main_goal }}
+        <span class="ai-eligibility-form__required-{{ ai_gen_id }}">*</span>
+      </label>
+      <div class="ai-eligibility-form__radio-group-{{ ai_gen_id }}">
+        <label class="ai-eligibility-form__radio-option-{{ ai_gen_id }}">
+          <input type="radio" name="main_goal" value="Weight" data-field="main_goal" required>
+          <span>{{ block.settings.q5_option_1 }}</span>
+        </label>
+        <label class="ai-eligibility-form__radio-option-{{ ai_gen_id }}">
+          <input type="radio" name="main_goal" value="Anti-aging" data-field="main_goal">
+          <span>{{ block.settings.q5_option_2 }}</span>
+        </label>
+        <label class="ai-eligibility-form__radio-option-{{ ai_gen_id }}">
+          <input type="radio" name="main_goal" value="Gut" data-field="main_goal">
+          <span>{{ block.settings.q5_option_3 }}</span>
+        </label>
+        <label class="ai-eligibility-form__radio-option-{{ ai_gen_id }}">
+          <input type="radio" name="main_goal" value="Energy" data-field="main_goal">
+          <span>{{ block.settings.q5_option_4 }}</span>
+        </label>
+        <label class="ai-eligibility-form__radio-option-{{ ai_gen_id }}">
+          <input type="radio" name="main_goal" value="Injury" data-field="main_goal">
+          <span>{{ block.settings.q5_option_5 }}</span>
+        </label>
+        <label class="ai-eligibility-form__radio-option-{{ ai_gen_id }}">
+          <input type="radio" name="main_goal" value="Immune" data-field="main_goal">
+          <span>{{ block.settings.q5_option_6 }}</span>
+        </label>
+        <label class="ai-eligibility-form__radio-option-{{ ai_gen_id }}">
+          <input type="radio" name="main_goal" value="Other" data-field="main_goal">
+          <span>{{ block.settings.q5_option_7 }}</span>
+        </label>
+      </div>
+      <div class="ai-eligibility-form__error-{{ ai_gen_id }}" data-error="main_goal">Please select an option</div>
+    </div>
+  </div>
+
+  <div class="ai-eligibility-form__step-{{ ai_gen_id }}" data-step="6">
+    <div class="ai-eligibility-form__field-group-{{ ai_gen_id }}">
+      <label class="ai-eligibility-form__label-{{ ai_gen_id }}">
+        {{ block.settings.q6_pregnancy }}
+        <span class="ai-eligibility-form__required-{{ ai_gen_id }}">*</span>
+      </label>
+      <div class="ai-eligibility-form__radio-group-{{ ai_gen_id }}">
+        <label class="ai-eligibility-form__radio-option-{{ ai_gen_id }}">
+          <input type="radio" name="pregnancy" value="Yes" data-field="pregnancy" required>
+          <span>{{ block.settings.q6_option_1 }}</span>
+        </label>
+        <label class="ai-eligibility-form__radio-option-{{ ai_gen_id }}">
+          <input type="radio" name="pregnancy" value="No" data-field="pregnancy">
+          <span>{{ block.settings.q6_option_2 }}</span>
+        </label>
+      </div>
+      <div class="ai-eligibility-form__error-{{ ai_gen_id }}" data-error="pregnancy">Please select an option</div>
+    </div>
+  </div>
+
+  <div class="ai-eligibility-form__step-{{ ai_gen_id }}" data-step="7">
+    <div class="ai-eligibility-form__field-group-{{ ai_gen_id }}">
+      <label class="ai-eligibility-form__label-{{ ai_gen_id }}">
+        {{ block.settings.q7_serious_reaction }}
+        <span class="ai-eligibility-form__required-{{ ai_gen_id }}">*</span>
+      </label>
+      <div class="ai-eligibility-form__radio-group-{{ ai_gen_id }}">
+        <label class="ai-eligibility-form__radio-option-{{ ai_gen_id }}">
+          <input type="radio" name="serious_reaction" value="Yes" data-field="serious_reaction" required>
+          <span>{{ block.settings.q7_option_1 }}</span>
+        </label>
+        <label class="ai-eligibility-form__radio-option-{{ ai_gen_id }}">
+          <input type="radio" name="serious_reaction" value="No" data-field="serious_reaction">
+          <span>{{ block.settings.q7_option_2 }}</span>
+        </label>
+      </div>
+      <div class="ai-eligibility-form__error-{{ ai_gen_id }}" data-error="serious_reaction">Please select an option</div>
+    </div>
+  </div>
+
+  <div class="ai-eligibility-form__step-{{ ai_gen_id }}" data-step="8">
+    <div class="ai-eligibility-form__field-group-{{ ai_gen_id }}">
+      <label class="ai-eligibility-form__checkbox-label-{{ ai_gen_id }}" style="display: flex; align-items: flex-start;">
+        <input type="checkbox" data-field="consent" required style="margin-top: 4px;">
+        <span>{{ block.settings.q8_consent }}</span>
+      </label>
+      <div class="ai-eligibility-form__error-{{ ai_gen_id }}" data-error="consent">You must agree to continue</div>
+    </div>
+  </div>
+
+  <div class="ai-eligibility-form__result-{{ ai_gen_id }}" data-result="eligible">
+    <div class="ai-eligibility-form__result-icon-{{ ai_gen_id }}">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+        <circle cx="32" cy="32" r="30" fill="#307a07" opacity="0.1"/>
+        <path d="M20 32l8 8 16-16" stroke="#307a07" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <h3 class="ai-eligibility-form__result-title-{{ ai_gen_id }}">{{ block.settings.eligible_title }}</h3>
+    <p class="ai-eligibility-form__result-message-{{ ai_gen_id }}">{{ block.settings.eligible_message }}</p>
+    <a href="/checkout" class="ai-eligibility-form__checkout-button-{{ ai_gen_id }}">
+      {{ block.settings.checkout_button_text }}
+    </a>
+  </div>
+
+  <div class="ai-eligibility-form__result-{{ ai_gen_id }}" data-result="ineligible">
+    <div class="ai-eligibility-form__result-icon-{{ ai_gen_id }}">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+        <circle cx="32" cy="32" r="30" fill="#cb2b2b" opacity="0.1"/>
+        <path d="M22 22l20 20M42 22l-20 20" stroke="#cb2b2b" stroke-width="4" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <h3 class="ai-eligibility-form__result-title-{{ ai_gen_id }}">{{ block.settings.ineligible_title }}</h3>
+    <p class="ai-eligibility-form__result-message-{{ ai_gen_id }}">{{ block.settings.ineligible_message }}</p>
+    <div class="ai-eligibility-form__disclaimer-{{ ai_gen_id }}">
+      {{ block.settings.ineligible_disclaimer }}
+    </div>
+  </div>
+
+  <div class="ai-eligibility-form__navigation-{{ ai_gen_id }}" data-navigation>
+    <button
+      type="button"
+      class="ai-eligibility-form__nav-button-{{ ai_gen_id }} ai-eligibility-form__nav-button--secondary-{{ ai_gen_id }}"
+      data-prev
+      disabled
+    >
+      {{ block.settings.previous_button_text }}
+    </button>
+    <button
+      type="button"
+      class="ai-eligibility-form__nav-button-{{ ai_gen_id }}"
+      data-next
+    >
+      {{ block.settings.next_button_text }}
+    </button>
+  </div>
+</eligibility-form-{{ ai_gen_id }}>
+
+<script>
+  (function() {
+    class EligibilityForm{{ ai_gen_id }} extends HTMLElement {
+      constructor() {
+        super();
+        this.currentStep = 'auth';
+        this.totalSteps = 8;
+        this.formData = {};
+        this.isCustomer = {{ customer | json }} !== null;
+      }
+
+      connectedCallback() {
+        this.progressFill = this.querySelector('[data-progress-fill]');
+        this.progressText = this.querySelector('[data-progress-text]');
+        this.prevButton = this.querySelector('[data-prev]');
+        this.nextButton = this.querySelector('[data-next]');
+        this.navigation = this.querySelector('[data-navigation]');
+        this.guestButton = this.querySelector('[data-guest-continue]');
+        this.sameAnswersCheckbox = this.querySelector('[data-same-answers]');
+
+        this.setupEventListeners();
+        this.updateProgress();
+      }
+
+      setupEventListeners() {
+        if (this.guestButton) {
+          this.guestButton.addEventListener('click', () => this.handleGuestContinue());
+        }
+
+        if (this.sameAnswersCheckbox) {
+          this.sameAnswersCheckbox.addEventListener('change', (e) => {
+            if (!e.target.checked) {
+              this.goToStep(1);
+            }
+          });
+        }
+
+        if (this.prevButton) {
+          this.prevButton.addEventListener('click', () => this.previousStep());
+        }
+
+        if (this.nextButton) {
+          this.nextButton.addEventListener('click', () => this.nextStep());
+        }
+
+        this.querySelectorAll('[data-field="medical_conditions"]').forEach(checkbox => {
+          checkbox.addEventListener('change', (e) => this.handleMedicalConditions(e));
+        });
+
+        this.querySelectorAll('input[type="radio"]').forEach(radio => {
+          radio.addEventListener('change', (e) => {
+            const parent = e.target.closest('.ai-eligibility-form__radio-option-{{ ai_gen_id }}');
+            if (parent) {
+              parent.parentElement.querySelectorAll('.ai-eligibility-form__radio-option-{{ ai_gen_id }}').forEach(opt => {
+                opt.classList.remove('selected');
+              });
+              parent.classList.add('selected');
+            }
+          });
+        });
+
+        this.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+          checkbox.addEventListener('change', (e) => {
+            const parent = e.target.closest('.ai-eligibility-form__checkbox-option-{{ ai_gen_id }}');
+            if (parent) {
+              if (e.target.checked) {
+                parent.classList.add('selected');
+              } else {
+                parent.classList.remove('selected');
+              }
+            }
+          });
+        });
+      }
+
+      handleGuestContinue() {
+        this.goToStep(1);
+      }
+
+      handleMedicalConditions(e) {
+        const isExclusive = e.target.hasAttribute('data-exclusive');
+        const showsOther = e.target.hasAttribute('data-show-other');
+        const otherField = this.querySelector('[data-other-field]');
+
+        if (isExclusive && e.target.checked) {
+          this.querySelectorAll('[data-field="medical_conditions"]').forEach(cb => {
+            if (cb !== e.target) {
+              cb.checked = false;
+              cb.closest('.ai-eligibility-form__checkbox-option-{{ ai_gen_id }}').classList.remove('selected');
+            }
+          });
+          if (otherField) otherField.style.display = 'none';
+        } else if (e.target.checked) {
+          const exclusiveCheckbox = this.querySelector('[data-field="medical_conditions"][data-exclusive]');
+          if (exclusiveCheckbox) {
+            exclusiveCheckbox.checked = false;
+            exclusiveCheckbox.closest('.ai-eligibility-form__checkbox-option-{{ ai_gen_id }}').classList.remove('selected');
+          }
+        }
+
+        if (showsOther && otherField) {
+          otherField.style.display = e.target.checked ? 'block' : 'none';
+          if (!e.target.checked) {
+            otherField.querySelector('input').value = '';
+          }
+        }
+      }
+
+      goToStep(stepNumber) {
+        this.querySelectorAll('[data-step]').forEach(step => {
+          step.classList.remove('active');
+        });
+
+        const targetStep = this.querySelector(`[data-step="${stepNumber}"]`);
+        if (targetStep) {
+          targetStep.classList.add('active');
+          this.currentStep = stepNumber;
+          this.updateProgress();
+          this.updateNavigationButtons();
+        }
+      }
+
+      previousStep() {
+        if (this.currentStep === 1) {
+          this.currentStep = 'auth';
+          this.goToStep('auth');
+        } else if (typeof this.currentStep === 'number' && this.currentStep > 1) {
+          this.goToStep(this.currentStep - 1);
+        }
+      }
+
+      nextStep() {
+        if (this.currentStep === 'auth') {
+          if (this.isCustomer && this.sameAnswersCheckbox && this.sameAnswersCheckbox.checked) {
+            this.submitForm(true);
+          } else {
+            this.goToStep(1);
+          }
+          return;
+        }
+
+        if (!this.validateCurrentStep()) {
+          return;
+        }
+
+        this.collectStepData();
+
+        if (this.currentStep < this.totalSteps) {
+          this.goToStep(this.currentStep + 1);
+        } else {
+          this.submitForm();
+        }
+      }
+
+      validateCurrentStep() {
+        const currentStepElement = this.querySelector(`[data-step="${this.currentStep}"]`);
+        if (!currentStepElement) return true;
+
+        let isValid = true;
+
+        currentStepElement.querySelectorAll('[data-error]').forEach(error => {
+          error.classList.remove('visible');
+        });
+
+        const requiredInputs = currentStepElement.querySelectorAll('input[required]:not([type="radio"]):not([type="checkbox"])');
+        requiredInputs.forEach(input => {
+          if (!input.value.trim()) {
+            const errorElement = currentStepElement.querySelector(`[data-error="${input.dataset.field}"]`);
+            if (errorElement) errorElement.classList.add('visible');
+            isValid = false;
+          }
+        });
+
+        const radioGroups = {};
+        currentStepElement.querySelectorAll('input[type="radio"][required]').forEach(radio => {
+          if (!radioGroups[radio.name]) {
+            radioGroups[radio.name] = [];
+          }
+          radioGroups[radio.name].push(radio);
+        });
+
+        Object.keys(radioGroups).forEach(groupName => {
+          const isChecked = radioGroups[groupName].some(radio => radio.checked);
+          if (!isChecked) {
+            const fieldName = radioGroups[groupName][0].dataset.field;
+            const errorElement = currentStepElement.querySelector(`[data-error="${fieldName}"]`);
+            if (errorElement) errorElement.classList.add('visible');
+            isValid = false;
+          }
+        });
+
+        const checkboxGroups = {};
+        currentStepElement.querySelectorAll('input[type="checkbox"][data-field]:not([data-field="consent"])').forEach(checkbox => {
+          const fieldName = checkbox.dataset.field;
+          if (!checkboxGroups[fieldName]) {
+            checkboxGroups[fieldName] = [];
+          }
+          checkboxGroups[fieldName].push(checkbox);
+        });
+
+        Object.keys(checkboxGroups).forEach(fieldName => {
+          const isChecked = checkboxGroups[fieldName].some(cb => cb.checked);
+          if (!isChecked && checkboxGroups[fieldName].length > 0) {
+            const errorElement = currentStepElement.querySelector(`[data-error="${fieldName}"]`);
+            if (errorElement) errorElement.classList.add('visible');
+            isValid = false;
+          }
+        });
+
+        const consentCheckbox = currentStepElement.querySelector('[data-field="consent"]');
+        if (consentCheckbox && !consentCheckbox.checked) {
+          const errorElement = currentStepElement.querySelector('[data-error="consent"]');
+          if (errorElement) errorElement.classList.add('visible');
+          isValid = false;
+        }
+
+        const otherCheckbox = currentStepElement.querySelector('[data-show-other]');
+        if (otherCheckbox && otherCheckbox.checked) {
+          const otherInput = currentStepElement.querySelector('[data-field="medical_conditions_other"]');
+          if (otherInput && !otherInput.value.trim()) {
+            const errorElement = currentStepElement.querySelector('[data-error="medical_conditions_other"]');
+            if (errorElement) errorElement.classList.add('visible');
+            isValid = false;
+          }
+        }
+
+        return isValid;
+      }
+
+      collectStepData() {
+        const currentStepElement = this.querySelector(`[data-step="${this.currentStep}"]`);
+        if (!currentStepElement) return;
+
+        currentStepElement.querySelectorAll('[data-field]').forEach(field => {
+          const fieldName = field.dataset.field;
+
+          if (field.type === 'radio') {
+            if (field.checked) {
+              this.formData[fieldName] = field.value;
+            }
+          } else if (field.type === 'checkbox') {
+            if (fieldName === 'consent') {
+              this.formData[fieldName] = field.checked;
+            } else {
+              if (!this.formData[fieldName]) {
+                this.formData[fieldName] = [];
+              }
+              if (field.checked) {
+                this.formData[fieldName].push(field.value);
+              }
+            }
+          } else {
+            this.formData[fieldName] = field.value;
+          }
+        });
+      }
+
+      checkEligibility() {
+        const healthStatus = this.formData.health_status;
+        const medicalConditions = this.formData.medical_conditions;
+        const pregnancy = this.formData.pregnancy;
+        const seriousReaction = this.formData.serious_reaction;
+
+        const isEligible = 
+          (healthStatus === 'Great' || healthStatus === 'Generally Okay') &&
+          (Array.isArray(medicalConditions) && medicalConditions.length === 1 && medicalConditions[0] === 'None') &&
+          pregnancy === 'No' &&
+          seriousReaction === 'No';
+
+        return isEligible;
+      }
+
+      async submitForm(skipToResult = false) {
+        if (!skipToResult) {
+          this.collectStepData();
+        }
+
+        const isEligible = skipToResult ? true : this.checkEligibility();
+        this.formData.eligible = isEligible;
+        this.formData.timestamp = new Date().toISOString();
+        this.formData.form_id = this.dataset.formId;
+
+        {% if customer %}
+          this.formData.customer_id = {{ customer.id | json }};
+          this.formData.customer_email = {{ customer.email | json }};
+        {% endif %}
+
+        console.log('Form submission data:', this.formData);
+
+        this.navigation.style.display = 'none';
+
+        const resultElement = this.querySelector(`[data-result="${isEligible ? 'eligible' : 'ineligible'}"]`);
+        if (resultElement) {
+          resultElement.classList.add('active');
+        }
+      }
+
+      updateProgress() {
+        let stepNumber = 0;
+        if (this.currentStep === 'auth') {
+          stepNumber = 0;
+        } else {
+          stepNumber = this.currentStep;
+        }
+
+        const progress = (stepNumber / this.totalSteps) * 100;
+        if (this.progressFill) {
+          this.progressFill.style.width = progress + '%';
+        }
+
+        if (this.progressText) {
+          if (this.currentStep === 'auth') {
+            this.progressText.textContent = 'Getting started';
+          } else {
+            this.progressText.textContent = `Step ${stepNumber} of ${this.totalSteps}`;
+          }
+        }
+      }
+
+      updateNavigationButtons() {
+        if (this.currentStep === 'auth') {
+          this.navigation.style.display = 'none';
+        } else {
+          this.navigation.style.display = 'flex';
+          this.prevButton.disabled = false;
+
+          if (this.currentStep === this.totalSteps) {
+            this.nextButton.textContent = '{{ block.settings.submit_button_text }}';
+          } else {
+            this.nextButton.textContent = '{{ block.settings.next_button_text }}';
+          }
+        }
+      }
+    }
+
+    customElements.define('eligibility-form-{{ ai_gen_id }}', EligibilityForm{{ ai_gen_id }});
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Eligibility form",
+  "tag": null,
+  "settings": [
+    {
+      "type": "header",
+      "content": "Form settings"
+    },
+    {
+      "type": "text",
+      "id": "form_title",
+      "label": "Form title",
+      "default": "Medical Eligibility Assessment"
+    },
+    {
+      "type": "text",
+      "id": "form_subtitle",
+      "label": "Form subtitle",
+      "default": "Please complete this assessment to proceed with your order"
+    },
+    {
+      "type": "range",
+      "id": "desktop_width_percent",
+      "label": "Desktop width",
+      "min": 50,
+      "max": 100,
+      "step": 5,
+      "unit": "%",
+      "default": 100
+    },
+    {
+      "type": "header",
+      "content": "Authentication step"
+    },
+    {
+      "type": "text",
+      "id": "auth_message",
+      "label": "Authentication message",
+      "default": "To get started, please sign in or continue as a guest."
+    },
+    {
+      "type": "text",
+      "id": "sign_in_text",
+      "label": "Sign in button text",
+      "default": "Sign in to your account"
+    },
+    {
+      "type": "text",
+      "id": "guest_text",
+      "label": "Guest button text",
+      "default": "Continue as guest"
+    },
+    {
+      "type": "text",
+      "id": "same_answers_text",
+      "label": "Same answers checkbox text",
+      "default": "My medical information has not changed since my last submission"
+    },
+    {
+      "type": "header",
+      "content": "Step 1: Identity"
+    },
+    {
+      "type": "text",
+      "id": "q1_full_name",
+      "label": "Full name label",
+      "default": "Full name"
+    },
+    {
+      "type": "text",
+      "id": "q1_dob",
+      "label": "Date of birth label",
+      "default": "Date of birth"
+    },
+    {
+      "type": "text",
+      "id": "q1_id_passport",
+      "label": "ID/Passport label",
+      "default": "ID or Passport number"
+    },
+    {
+      "type": "header",
+      "content": "Step 2: Health status"
+    },
+    {
+      "type": "text",
+      "id": "q2_health_status",
+      "label": "Question",
+      "default": "How would you describe your current health status?"
+    },
+    {
+      "type": "text",
+      "id": "q2_option_1",
+      "label": "Option 1",
+      "default": "Great"
+    },
+    {
+      "type": "text",
+      "id": "q2_option_2",
+      "label": "Option 2",
+      "default": "Generally Okay"
+    },
+    {
+      "type": "text",
+      "id": "q2_option_3",
+      "label": "Option 3",
+      "default": "Not good"
+    },
+    {
+      "type": "header",
+      "content": "Step 3: Medical conditions"
+    },
+    {
+      "type": "text",
+      "id": "q3_medical_conditions",
+      "label": "Question",
+      "default": "Do you have any of the following medical conditions?"
+    },
+    {
+      "type": "text",
+      "id": "q3_option_1",
+      "label": "Option 1 (exclusive)",
+      "default": "None"
+    },
+    {
+      "type": "text",
+      "id": "q3_option_2",
+      "label": "Option 2",
+      "default": "Heart Disease"
+    },
+    {
+      "type": "text",
+      "id": "q3_option_3",
+      "label": "Option 3",
+      "default": "Diabetes"
+    },
+    {
+      "type": "text",
+      "id": "q3_option_4",
+      "label": "Option 4",
+      "default": "Hypertension"
+    },
+    {
+      "type": "text",
+      "id": "q3_option_5",
+      "label": "Option 5 (shows other field)",
+      "default": "Other"
+    },
+    {
+      "type": "text",
+      "id": "q3_other_label",
+      "label": "Other field label",
+      "default": "Please specify other condition"
+    },
+    {
+      "type": "header",
+      "content": "Step 4: Medications and allergies"
+    },
+    {
+      "type": "text",
+      "id": "q4_medications",
+      "label": "Question",
+      "default": "Current medications or allergies"
+    },
+    {
+      "type": "text",
+      "id": "q4_placeholder",
+      "label": "Placeholder text",
+      "default": "List any medications or allergies"
+    },
+    {
+      "type": "header",
+      "content": "Step 5: Main goal"
+    },
+    {
+      "type": "text",
+      "id": "q5_main_goal",
+      "label": "Question",
+      "default": "What is your main health goal?"
+    },
+    {
+      "type": "text",
+      "id": "q5_option_1",
+      "label": "Option 1",
+      "default": "Weight management"
+    },
+    {
+      "type": "text",
+      "id": "q5_option_2",
+      "label": "Option 2",
+      "default": "Anti-aging"
+    },
+    {
+      "type": "text",
+      "id": "q5_option_3",
+      "label": "Option 3",
+      "default": "Gut health"
+    },
+    {
+      "type": "text",
+      "id": "q5_option_4",
+      "label": "Option 4",
+      "default": "Energy boost"
+    },
+    {
+      "type": "text",
+      "id": "q5_option_5",
+      "label": "Option 5",
+      "default": "Injury recovery"
+    },
+    {
+      "type": "text",
+      "id": "q5_option_6",
+      "label": "Option 6",
+      "default": "Immune support"
+    },
+    {
+      "type": "text",
+      "id": "q5_option_7",
+      "label": "Option 7",
+      "default": "Other"
+    },
+    {
+      "type": "header",
+      "content": "Step 6: Pregnancy/breastfeeding"
+    },
+    {
+      "type": "text",
+      "id": "q6_pregnancy",
+      "label": "Question",
+      "default": "Are you currently pregnant or breastfeeding?"
+    },
+    {
+      "type": "text",
+      "id": "q6_option_1",
+      "label": "Option 1",
+      "default": "Yes"
+    },
+    {
+      "type": "text",
+      "id": "q6_option_2",
+      "label": "Option 2",
+      "default": "No"
+    },
+    {
+      "type": "header",
+      "content": "Step 7: Serious reaction history"
+    },
+    {
+      "type": "text",
+      "id": "q7_serious_reaction",
+      "label": "Question",
+      "default": "Have you ever had a serious reaction to any peptide, hormone or weight-loss injection?"
+    },
+    {
+      "type": "text",
+      "id": "q7_option_1",
+      "label": "Option 1",
+      "default": "Yes"
+    },
+    {
+      "type": "text",
+      "id": "q7_option_2",
+      "label": "Option 2",
+      "default": "No"
+    },
+    {
+      "type": "header",
+      "content": "Step 8: Consent"
+    },
+    {
+      "type": "text",
+      "id": "q8_consent",
+      "label": "Consent text",
+      "default": "I confirm my information is true and I consent to doctor review."
+    },
+    {
+      "type": "header",
+      "content": "Results"
+    },
+    {
+      "type": "text",
+      "id": "eligible_title",
+      "label": "Eligible title",
+      "default": "You're Eligible!"
+    },
+    {
+      "type": "text",
+      "id": "eligible_message",
+      "label": "Eligible message",
+      "default": "Based on your responses, you are eligible to proceed with your order."
+    },
+    {
+      "type": "text",
+      "id": "ineligible_title",
+      "label": "Ineligible title",
+      "default": "Additional Review Required"
+    },
+    {
+      "type": "text",
+      "id": "ineligible_message",
+      "label": "Ineligible message",
+      "default": "Based on your responses, we need to review your eligibility with our medical team."
+    },
+    {
+      "type": "textarea",
+      "id": "ineligible_disclaimer",
+      "label": "Ineligible disclaimer",
+      "default": "Please contact our support team for further assistance. We're here to help you find the right solution for your health needs."
+    },
+    {
+      "type": "header",
+      "content": "Button labels"
+    },
+    {
+      "type": "text",
+      "id": "previous_button_text",
+      "label": "Previous button",
+      "default": "Previous"
+    },
+    {
+      "type": "text",
+      "id": "next_button_text",
+      "label": "Next button",
+      "default": "Next"
+    },
+    {
+      "type": "text",
+      "id": "submit_button_text",
+      "label": "Submit button",
+      "default": "Submit"
+    },
+    {
+      "type": "text",
+      "id": "checkout_button_text",
+      "label": "Checkout button",
+      "default": "Continue to Checkout"
+    },
+    {
+      "type": "header",
+      "content": "Colors"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text",
+      "default": "#1c1c1c"
+    },
+    {
+      "type": "color",
+      "id": "button_color",
+      "label": "Button",
+      "default": "#b29964"
+    },
+    {
+      "type": "color",
+      "id": "button_text_color",
+      "label": "Button text",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "button_hover_color",
+      "label": "Button hover",
+      "default": "#9a8354"
+    },
+    {
+      "type": "color",
+      "id": "field_bg_color",
+      "label": "Field background",
+      "default": "#f9f9f9"
+    },
+    {
+      "type": "color",
+      "id": "input_border_color",
+      "label": "Input border",
+      "default": "#e0e0e0"
+    },
+    {
+      "type": "color",
+      "id": "progress_color",
+      "label": "Progress bar",
+      "default": "#b29964"
+    },
+    {
+      "type": "color",
+      "id": "progress_bg_color",
+      "label": "Progress background",
+      "default": "#e0e0e0"
+    },
+    {
+      "type": "color",
+      "id": "error_color",
+      "label": "Error",
+      "default": "#cb2b2b"
+    },
+    {
+      "type": "header",
+      "content": "Typography"
+    },
+    {
+      "type": "range",
+      "id": "title_size",
+      "label": "Title size",
+      "min": 20,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 28
+    },
+    {
+      "type": "range",
+      "id": "subtitle_size",
+      "label": "Subtitle size",
+      "min": 12,
+      "max": 20,
+      "step": 1,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "header",
+      "content": "Style"
+    },
+    {
+      "type": "range",
+      "id": "border_radius",
+      "label": "Form border radius",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 12
+    },
+    {
+      "type": "range",
+      "id": "input_border_radius",
+      "label": "Input border radius",
+      "min": 0,
+      "max": 20,
+      "step": 2,
+      "unit": "px",
+      "default": 6
+    },
+    {
+      "type": "range",
+      "id": "button_border_radius",
+      "label": "Button border radius",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 6
+    }
+  ],
+  "presets": [
+    {
+      "name": "Eligibility form"
+    }
+  ]
+}
+{% endschema %}

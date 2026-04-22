@@ -1,0 +1,553 @@
+{% doc %}
+  @prompt
+    A toggle button that asks the user if the provided information is still the same. Below the toggle, there will be 22 buttons: one that says "Proceed to Checkout" if the toggle button is "Yes," and another that says "Update Medical Check." if customer is sign in if not show sign in and hide the toggle  and proceed to check out button, open sign in in new tap.  If customer already signed in hide sign in button, control section alignment
+{% enddoc %}
+{% assign ai_gen_id = block.id | replace: '_', '' | downcase %}
+
+{% style %}
+  .ai-medical-check-container-{{ ai_gen_id }} {
+    display: block;
+    width: {{ block.settings.desktop_width_percent }}%;
+    max-width: 100%;
+    padding: {{ block.settings.container_padding }}px;
+    background-color: {{ block.settings.background_color }};
+    border-radius: {{ block.settings.border_radius }}px;
+    margin-left: {% if block.settings.alignment == 'left' %}0{% elsif block.settings.alignment == 'center' %}auto{% else %}auto{% endif %};
+    margin-right: {% if block.settings.alignment == 'right' %}0{% elsif block.settings.alignment == 'center' %}auto{% else %}auto{% endif %};
+  }
+
+  .ai-medical-check-toggle-section-{{ ai_gen_id }} {
+    margin-bottom: 24px;
+  }
+
+  .ai-medical-check-question-{{ ai_gen_id }} {
+    font-size: {{ block.settings.question_font_size }}px;
+    color: {{ block.settings.text_color }};
+    margin-bottom: 16px;
+    font-weight: 600;
+    text-align: {{ block.settings.text_alignment }};
+  }
+
+  .ai-medical-check-toggle-wrapper-{{ ai_gen_id }} {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: {{ block.settings.text_alignment }};
+  }
+
+  .ai-medical-check-toggle-button-{{ ai_gen_id }} {
+    flex: 1;
+    padding: 14px 24px;
+    border: 2px solid {{ block.settings.toggle_border_color }};
+    background-color: {{ block.settings.toggle_background }};
+    color: {{ block.settings.toggle_text_color }};
+    border-radius: {{ block.settings.toggle_border_radius }}px;
+    cursor: pointer;
+    font-size: {{ block.settings.toggle_font_size }}px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+  }
+
+  .ai-medical-check-toggle-button-{{ ai_gen_id }}:hover {
+    border-color: {{ block.settings.toggle_active_border }};
+  }
+
+  .ai-medical-check-toggle-button-{{ ai_gen_id }}.active {
+    background-color: {{ block.settings.toggle_active_background }};
+    color: {{ block.settings.toggle_active_text }};
+    border-color: {{ block.settings.toggle_active_border }};
+  }
+
+  .ai-medical-check-buttons-section-{{ ai_gen_id }} {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: {% if block.settings.text_alignment == 'left' %}flex-start{% elsif block.settings.text_alignment == 'center' %}center{% else %}flex-end{% endif %};
+  }
+
+  .ai-medical-check-action-button-{{ ai_gen_id }} {
+    width: 100%;
+    padding: 16px 32px;
+    border: none;
+    border-radius: {{ block.settings.button_border_radius }}px;
+    font-size: {{ block.settings.button_font_size }}px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+  }
+
+  .ai-medical-check-action-button-{{ ai_gen_id }}--primary {
+    background-color: {{ block.settings.primary_button_background }};
+    color: {{ block.settings.primary_button_text }};
+  }
+
+  .ai-medical-check-action-button-{{ ai_gen_id }}--primary:hover {
+    background-color: {{ block.settings.primary_button_hover }};
+  }
+
+  .ai-medical-check-action-button-{{ ai_gen_id }}--secondary {
+    background-color: {{ block.settings.secondary_button_background }};
+    color: {{ block.settings.secondary_button_text }};
+  }
+
+  .ai-medical-check-action-button-{{ ai_gen_id }}--secondary:hover {
+    background-color: {{ block.settings.secondary_button_hover }};
+  }
+
+  .ai-medical-check-hidden-{{ ai_gen_id }} {
+    display: none;
+  }
+
+  @media screen and (max-width: 749px) {
+    .ai-medical-check-container-{{ ai_gen_id }} {
+      width: 100%;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .ai-medical-check-toggle-wrapper-{{ ai_gen_id }} {
+      flex-direction: column;
+    }
+
+    .ai-medical-check-toggle-button-{{ ai_gen_id }} {
+      width: 100%;
+    }
+
+    .ai-medical-check-question-{{ ai_gen_id }} {
+      text-align: {{ block.settings.mobile_text_alignment }};
+    }
+
+    .ai-medical-check-toggle-wrapper-{{ ai_gen_id }} {
+      justify-content: {{ block.settings.mobile_text_alignment }};
+    }
+
+    .ai-medical-check-buttons-section-{{ ai_gen_id }} {
+      align-items: {% if block.settings.mobile_text_alignment == 'left' %}flex-start{% elsif block.settings.mobile_text_alignment == 'center' %}center{% else %}flex-end{% endif %};
+    }
+  }
+{% endstyle %}
+
+<medical-check-toggle-{{ ai_gen_id }}
+  class="ai-medical-check-container-{{ ai_gen_id }}"
+  {{ block.shopify_attributes }}
+>
+  {% if customer %}
+    <div class="ai-medical-check-toggle-section-{{ ai_gen_id }}">
+      <div class="ai-medical-check-question-{{ ai_gen_id }}">
+        {{ block.settings.question_text }}
+      </div>
+      <div class="ai-medical-check-toggle-wrapper-{{ ai_gen_id }}">
+        <button
+          type="button"
+          class="ai-medical-check-toggle-button-{{ ai_gen_id }} active"
+          data-toggle-value="yes"
+          aria-pressed="true"
+        >
+          {{ block.settings.yes_text }}
+        </button>
+        <button
+          type="button"
+          class="ai-medical-check-toggle-button-{{ ai_gen_id }}"
+          data-toggle-value="no"
+          aria-pressed="false"
+        >
+          {{ block.settings.no_text }}
+        </button>
+      </div>
+    </div>
+
+    <div class="ai-medical-check-buttons-section-{{ ai_gen_id }}">
+      <a
+        href="{{ block.settings.checkout_url }}"
+        class="ai-medical-check-action-button-{{ ai_gen_id }} ai-medical-check-action-button-{{ ai_gen_id }}--primary"
+        data-button-type="checkout"
+      >
+        {{ block.settings.checkout_button_text }}
+      </a>
+      <a
+        href="{{ block.settings.update_url }}"
+        class="ai-medical-check-action-button-{{ ai_gen_id }} ai-medical-check-action-button-{{ ai_gen_id }}--secondary ai-medical-check-hidden-{{ ai_gen_id }}"
+        data-button-type="update"
+      >
+        {{ block.settings.update_button_text }}
+      </a>
+    </div>
+  {% else %}
+    <div class="ai-medical-check-buttons-section-{{ ai_gen_id }}">
+      <a
+        href="{{ routes.account_login_url }}"
+        class="ai-medical-check-action-button-{{ ai_gen_id }} ai-medical-check-action-button-{{ ai_gen_id }}--primary"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        {{ block.settings.signin_button_text }}
+      </a>
+    </div>
+  {% endif %}
+</medical-check-toggle-{{ ai_gen_id }}>
+
+<script>
+  (function() {
+    class MedicalCheckToggle{{ ai_gen_id }} extends HTMLElement {
+      constructor() {
+        super();
+      }
+
+      connectedCallback() {
+        this.toggleButtons = this.querySelectorAll('.ai-medical-check-toggle-button-{{ ai_gen_id }}');
+        this.checkoutButton = this.querySelector('[data-button-type="checkout"]');
+        this.updateButton = this.querySelector('[data-button-type="update"]');
+        
+        if (this.toggleButtons.length > 0) {
+          this.setupEventListeners();
+        }
+      }
+
+      setupEventListeners() {
+        this.toggleButtons.forEach((button) => {
+          button.addEventListener('click', () => {
+            this.handleToggle(button);
+          });
+        });
+      }
+
+      handleToggle(clickedButton) {
+        const toggleValue = clickedButton.getAttribute('data-toggle-value');
+        
+        this.toggleButtons.forEach((btn) => {
+          btn.classList.remove('active');
+          btn.setAttribute('aria-pressed', 'false');
+        });
+        
+        clickedButton.classList.add('active');
+        clickedButton.setAttribute('aria-pressed', 'true');
+        
+        if (toggleValue === 'yes') {
+          this.checkoutButton.classList.remove('ai-medical-check-hidden-{{ ai_gen_id }}');
+          this.updateButton.classList.add('ai-medical-check-hidden-{{ ai_gen_id }}');
+        } else {
+          this.checkoutButton.classList.add('ai-medical-check-hidden-{{ ai_gen_id }}');
+          this.updateButton.classList.remove('ai-medical-check-hidden-{{ ai_gen_id }}');
+        }
+      }
+    }
+
+    customElements.define('medical-check-toggle-{{ ai_gen_id }}', MedicalCheckToggle{{ ai_gen_id }});
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Medical check toggle",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Content"
+    },
+    {
+      "type": "text",
+      "id": "question_text",
+      "label": "Question text",
+      "default": "Is the provided information still the same?"
+    },
+    {
+      "type": "text",
+      "id": "yes_text",
+      "label": "Yes button text",
+      "default": "Yes"
+    },
+    {
+      "type": "text",
+      "id": "no_text",
+      "label": "No button text",
+      "default": "No"
+    },
+    {
+      "type": "text",
+      "id": "checkout_button_text",
+      "label": "Checkout button text",
+      "default": "Proceed to Checkout"
+    },
+    {
+      "type": "text",
+      "id": "update_button_text",
+      "label": "Update button text",
+      "default": "Update Medical Check"
+    },
+    {
+      "type": "text",
+      "id": "signin_button_text",
+      "label": "Sign in button text",
+      "default": "Sign In"
+    },
+    {
+      "type": "header",
+      "content": "Links"
+    },
+    {
+      "type": "url",
+      "id": "checkout_url",
+      "label": "Checkout URL"
+    },
+    {
+      "type": "url",
+      "id": "update_url",
+      "label": "Update medical check URL"
+    },
+    {
+      "type": "header",
+      "content": "Layout"
+    },
+    {
+      "type": "select",
+      "id": "alignment",
+      "label": "Block alignment",
+      "options": [
+        {
+          "value": "left",
+          "label": "Left"
+        },
+        {
+          "value": "center",
+          "label": "Center"
+        },
+        {
+          "value": "right",
+          "label": "Right"
+        }
+      ],
+      "default": "center"
+    },
+    {
+      "type": "select",
+      "id": "text_alignment",
+      "label": "Text alignment (desktop)",
+      "options": [
+        {
+          "value": "left",
+          "label": "Left"
+        },
+        {
+          "value": "center",
+          "label": "Center"
+        },
+        {
+          "value": "right",
+          "label": "Right"
+        }
+      ],
+      "default": "center"
+    },
+    {
+      "type": "select",
+      "id": "mobile_text_alignment",
+      "label": "Text alignment (mobile)",
+      "options": [
+        {
+          "value": "left",
+          "label": "Left"
+        },
+        {
+          "value": "center",
+          "label": "Center"
+        },
+        {
+          "value": "right",
+          "label": "Right"
+        }
+      ],
+      "default": "center"
+    },
+    {
+      "type": "header",
+      "content": "Style"
+    },
+    {
+      "type": "range",
+      "id": "desktop_width_percent",
+      "label": "Desktop width",
+      "min": 50,
+      "max": 100,
+      "step": 5,
+      "unit": "%",
+      "default": 100
+    },
+    {
+      "type": "range",
+      "id": "container_padding",
+      "label": "Container padding",
+      "min": 0,
+      "max": 60,
+      "step": 4,
+      "unit": "px",
+      "default": 32
+    },
+    {
+      "type": "range",
+      "id": "border_radius",
+      "label": "Container border radius",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 8
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text color",
+      "default": "#1c1c1c"
+    },
+    {
+      "type": "header",
+      "content": "Question"
+    },
+    {
+      "type": "range",
+      "id": "question_font_size",
+      "label": "Font size",
+      "min": 14,
+      "max": 32,
+      "step": 2,
+      "unit": "px",
+      "default": 18
+    },
+    {
+      "type": "header",
+      "content": "Toggle buttons"
+    },
+    {
+      "type": "range",
+      "id": "toggle_font_size",
+      "label": "Font size",
+      "min": 12,
+      "max": 24,
+      "step": 2,
+      "unit": "px",
+      "default": 14
+    },
+    {
+      "type": "range",
+      "id": "toggle_border_radius",
+      "label": "Border radius",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 4
+    },
+    {
+      "type": "color",
+      "id": "toggle_background",
+      "label": "Background color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "toggle_text_color",
+      "label": "Text color",
+      "default": "#1c1c1c"
+    },
+    {
+      "type": "color",
+      "id": "toggle_border_color",
+      "label": "Border color",
+      "default": "#cccccc"
+    },
+    {
+      "type": "color",
+      "id": "toggle_active_background",
+      "label": "Active background color",
+      "default": "#b29964"
+    },
+    {
+      "type": "color",
+      "id": "toggle_active_text",
+      "label": "Active text color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "toggle_active_border",
+      "label": "Active border color",
+      "default": "#b29964"
+    },
+    {
+      "type": "header",
+      "content": "Action buttons"
+    },
+    {
+      "type": "range",
+      "id": "button_font_size",
+      "label": "Font size",
+      "min": 12,
+      "max": 24,
+      "step": 2,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "button_border_radius",
+      "label": "Border radius",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 4
+    },
+    {
+      "type": "color",
+      "id": "primary_button_background",
+      "label": "Primary background color",
+      "default": "#b29964"
+    },
+    {
+      "type": "color",
+      "id": "primary_button_text",
+      "label": "Primary text color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "primary_button_hover",
+      "label": "Primary hover color",
+      "default": "#9a8456"
+    },
+    {
+      "type": "color",
+      "id": "secondary_button_background",
+      "label": "Secondary background color",
+      "default": "#e7e2dc"
+    },
+    {
+      "type": "color",
+      "id": "secondary_button_text",
+      "label": "Secondary text color",
+      "default": "#1c1c1c"
+    },
+    {
+      "type": "color",
+      "id": "secondary_button_hover",
+      "label": "Secondary hover color",
+      "default": "#d4cec5"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Medical check toggle"
+    }
+  ]
+}
+{% endschema %}

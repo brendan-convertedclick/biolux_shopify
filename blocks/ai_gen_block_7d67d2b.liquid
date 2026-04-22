@@ -1,0 +1,527 @@
+{% doc %}
+  @prompt
+    Ask user to sign in or continue as quest checkout. If or after signing in show a check box asking if the medical form answer are still the same. By defualt it should be checked if user unchecks show the form. For guest users always show the form
+    
+    The form should be integration of Formful app so a feild to add the form ID.
+{% enddoc %}
+{% assign ai_gen_id = block.id | replace: '_', '' | downcase %}
+
+{% style %}
+  .ai-medical-form-gate-{{ ai_gen_id }} {
+    width: {{ block.settings.desktop_width_percent }}%;
+    max-width: 100%;
+    padding: 30px;
+    background-color: {{ block.settings.background_color }};
+    border-radius: {{ block.settings.border_radius }}px;
+    display: block;
+  }
+
+  .ai-medical-form-gate__auth-section-{{ ai_gen_id }} {
+    margin-bottom: 24px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid {{ block.settings.divider_color }};
+  }
+
+  .ai-medical-form-gate__heading-{{ ai_gen_id }} {
+    font-size: {{ block.settings.heading_size }}px;
+    color: {{ block.settings.text_color }};
+    margin: 0 0 16px 0;
+    font-weight: 600;
+  }
+
+  .ai-medical-form-gate__subheading-{{ ai_gen_id }} {
+    font-size: {{ block.settings.subheading_size }}px;
+    color: {{ block.settings.text_color }};
+    margin: 0 0 12px 0;
+    font-weight: 500;
+  }
+
+  .ai-medical-form-gate__text-{{ ai_gen_id }} {
+    font-size: {{ block.settings.text_size }}px;
+    color: {{ block.settings.text_color }};
+    margin: 0 0 16px 0;
+    line-height: 1.5;
+  }
+
+  .ai-medical-form-gate__auth-buttons-{{ ai_gen_id }} {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .ai-medical-form-gate__button-{{ ai_gen_id }} {
+    padding: 12px 24px;
+    border-radius: {{ block.settings.button_border_radius }}px;
+    font-size: {{ block.settings.button_text_size }}px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+    border: none;
+  }
+
+  .ai-medical-form-gate__button--primary-{{ ai_gen_id }} {
+    background-color: {{ block.settings.primary_button_color }};
+    color: {{ block.settings.primary_button_text_color }};
+  }
+
+  .ai-medical-form-gate__button--primary-{{ ai_gen_id }}:hover {
+    background-color: {{ block.settings.primary_button_hover_color }};
+  }
+
+  .ai-medical-form-gate__button--secondary-{{ ai_gen_id }} {
+    background-color: {{ block.settings.secondary_button_color }};
+    color: {{ block.settings.secondary_button_text_color }};
+    border: 1px solid {{ block.settings.secondary_button_border_color }};
+  }
+
+  .ai-medical-form-gate__button--secondary-{{ ai_gen_id }}:hover {
+    background-color: {{ block.settings.secondary_button_hover_color }};
+  }
+
+  .ai-medical-form-gate__confirmation-section-{{ ai_gen_id }} {
+    margin-bottom: 24px;
+    padding: 20px;
+    background-color: {{ block.settings.confirmation_bg_color }};
+    border-radius: {{ block.settings.border_radius }}px;
+  }
+
+  .ai-medical-form-gate__checkbox-wrapper-{{ ai_gen_id }} {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: pointer;
+  }
+
+  .ai-medical-form-gate__checkbox-{{ ai_gen_id }} {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .ai-medical-form-gate__checkbox-label-{{ ai_gen_id }} {
+    font-size: {{ block.settings.text_size }}px;
+    color: {{ block.settings.text_color }};
+    cursor: pointer;
+    line-height: 1.5;
+  }
+
+  .ai-medical-form-gate__form-container-{{ ai_gen_id }} {
+    margin-top: 24px;
+  }
+
+  .ai-medical-form-gate__form-container-{{ ai_gen_id }}.hidden {
+    display: none;
+  }
+
+  .ai-medical-form-gate__welcome-{{ ai_gen_id }} {
+    font-size: {{ block.settings.text_size }}px;
+    color: {{ block.settings.text_color }};
+    margin-bottom: 16px;
+  }
+
+  .ai-medical-form-gate__empty-state-{{ ai_gen_id }} {
+    padding: 40px 20px;
+    text-align: center;
+    background-color: #f9f9f9;
+    border-radius: {{ block.settings.border_radius }}px;
+    border: 2px dashed #ddd;
+  }
+
+  .ai-medical-form-gate__empty-state-text-{{ ai_gen_id }} {
+    font-size: 14px;
+    color: #666;
+    margin-top: 12px;
+  }
+
+  @media screen and (max-width: 749px) {
+    .ai-medical-form-gate-{{ ai_gen_id }} {
+      padding: 20px;
+    }
+
+    .ai-medical-form-gate__auth-buttons-{{ ai_gen_id }} {
+      flex-direction: column;
+    }
+
+    .ai-medical-form-gate__button-{{ ai_gen_id }} {
+      width: 100%;
+      text-align: center;
+    }
+  }
+{% endstyle %}
+
+<medical-form-gate-{{ ai_gen_id }}
+  class="ai-medical-form-gate-{{ ai_gen_id }}"
+  data-form-id="{{ block.settings.formful_form_id }}"
+  {{ block.shopify_attributes }}
+>
+  {% if customer %}
+    <div class="ai-medical-form-gate__welcome-{{ ai_gen_id }}">
+      {{ block.settings.welcome_message | replace: '[NAME]', customer.first_name }}
+    </div>
+
+    <div class="ai-medical-form-gate__confirmation-section-{{ ai_gen_id }}">
+      <label class="ai-medical-form-gate__checkbox-wrapper-{{ ai_gen_id }}">
+        <input
+          type="checkbox"
+          class="ai-medical-form-gate__checkbox-{{ ai_gen_id }}"
+          id="ai-medical-confirmation-{{ ai_gen_id }}"
+          checked
+        >
+        <span class="ai-medical-form-gate__checkbox-label-{{ ai_gen_id }}">
+          {{ block.settings.confirmation_text }}
+        </span>
+      </label>
+    </div>
+
+    <div class="ai-medical-form-gate__form-container-{{ ai_gen_id }} hidden">
+      {% if block.settings.formful_form_id != blank %}
+        <div id="formful-form-{{ block.settings.formful_form_id }}"></div>
+      {% else %}
+        <div class="ai-medical-form-gate__empty-state-{{ ai_gen_id }}">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="1.5">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="12" y1="18" x2="12" y2="12"></line>
+            <line x1="9" y1="15" x2="15" y2="15"></line>
+          </svg>
+          <div class="ai-medical-form-gate__empty-state-text-{{ ai_gen_id }}">
+            Add your Formful form ID in the block settings
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  {% else %}
+    <div class="ai-medical-form-gate__auth-section-{{ ai_gen_id }}">
+      <h2 class="ai-medical-form-gate__heading-{{ ai_gen_id }}">
+        {{ block.settings.auth_heading }}
+      </h2>
+      <p class="ai-medical-form-gate__text-{{ ai_gen_id }}">
+        {{ block.settings.auth_description }}
+      </p>
+      <div class="ai-medical-form-gate__auth-buttons-{{ ai_gen_id }}">
+        <a
+          href="/account/login?return_url={{ request.path | url_encode }}"
+          class="ai-medical-form-gate__button-{{ ai_gen_id }} ai-medical-form-gate__button--primary-{{ ai_gen_id }}"
+        >
+          {{ block.settings.sign_in_button_text }}
+        </a>
+        <button
+          type="button"
+          class="ai-medical-form-gate__button-{{ ai_gen_id }} ai-medical-form-gate__button--secondary-{{ ai_gen_id }}"
+          id="ai-continue-guest-{{ ai_gen_id }}"
+        >
+          {{ block.settings.guest_button_text }}
+        </button>
+      </div>
+    </div>
+
+    <div class="ai-medical-form-gate__form-container-{{ ai_gen_id }} hidden" id="ai-guest-form-{{ ai_gen_id }}">
+      <h3 class="ai-medical-form-gate__subheading-{{ ai_gen_id }}">
+        {{ block.settings.form_heading }}
+      </h3>
+      {% if block.settings.formful_form_id != blank %}
+        <div id="formful-form-{{ block.settings.formful_form_id }}"></div>
+      {% else %}
+        <div class="ai-medical-form-gate__empty-state-{{ ai_gen_id }}">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="1.5">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="12" y1="18" x2="12" y2="12"></line>
+            <line x1="9" y1="15" x2="15" y2="15"></line>
+          </svg>
+          <div class="ai-medical-form-gate__empty-state-text-{{ ai_gen_id }}">
+            Add your Formful form ID in the block settings
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  {% endif %}
+</medical-form-gate-{{ ai_gen_id }}>
+
+<script>
+  (function() {
+    class MedicalFormGate{{ ai_gen_id }} extends HTMLElement {
+      constructor() {
+        super();
+        this.isCustomer = {{ customer | json }} !== null;
+      }
+
+      connectedCallback() {
+        if (this.isCustomer) {
+          this.setupCustomerFlow();
+        } else {
+          this.setupGuestFlow();
+        }
+      }
+
+      setupCustomerFlow() {
+        const checkbox = this.querySelector('#ai-medical-confirmation-{{ ai_gen_id }}');
+        const formContainer = this.querySelector('.ai-medical-form-gate__form-container-{{ ai_gen_id }}');
+
+        if (checkbox && formContainer) {
+          checkbox.addEventListener('change', function() {
+            if (this.checked) {
+              formContainer.classList.add('hidden');
+            } else {
+              formContainer.classList.remove('hidden');
+            }
+          });
+        }
+      }
+
+      setupGuestFlow() {
+        const guestButton = this.querySelector('#ai-continue-guest-{{ ai_gen_id }}');
+        const guestFormContainer = this.querySelector('#ai-guest-form-{{ ai_gen_id }}');
+        const authSection = this.querySelector('.ai-medical-form-gate__auth-section-{{ ai_gen_id }}');
+
+        if (guestButton && guestFormContainer) {
+          guestButton.addEventListener('click', function() {
+            if (authSection) {
+              authSection.style.display = 'none';
+            }
+            guestFormContainer.classList.remove('hidden');
+          });
+        }
+      }
+    }
+
+    customElements.define('medical-form-gate-{{ ai_gen_id }}', MedicalFormGate{{ ai_gen_id }});
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Medical form gate",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Formful integration"
+    },
+    {
+      "type": "text",
+      "id": "formful_form_id",
+      "label": "Formful form ID",
+      "info": "Enter your Formful form ID to embed the medical eligibility form"
+    },
+    {
+      "type": "header",
+      "content": "Authentication section"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "auth_heading",
+      "label": "Heading",
+      "default": "Before you proceed"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "auth_description",
+      "label": "Description",
+      "default": "Please sign in to your account or continue as a guest to complete the medical eligibility form."
+    },
+    {
+      "type": "inline_richtext",
+      "id": "sign_in_button_text",
+      "label": "Sign in button text",
+      "default": "Sign in"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "guest_button_text",
+      "label": "Guest button text",
+      "default": "Continue as guest"
+    },
+    {
+      "type": "header",
+      "content": "Returning customer section"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "welcome_message",
+      "label": "Welcome message",
+      "default": "Welcome back, [NAME]!",
+      "info": "Use [NAME] to insert customer's first name"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "confirmation_text",
+      "label": "Confirmation checkbox text",
+      "default": "My medical information has not changed since my last visit"
+    },
+    {
+      "type": "header",
+      "content": "Form section"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "form_heading",
+      "label": "Form heading",
+      "default": "Medical eligibility form"
+    },
+    {
+      "type": "header",
+      "content": "Layout"
+    },
+    {
+      "type": "range",
+      "id": "desktop_width_percent",
+      "label": "Desktop width",
+      "min": 50,
+      "max": 100,
+      "step": 5,
+      "unit": "%",
+      "default": 100
+    },
+    {
+      "type": "range",
+      "id": "border_radius",
+      "label": "Border radius",
+      "min": 0,
+      "max": 30,
+      "step": 2,
+      "unit": "px",
+      "default": 8
+    },
+    {
+      "type": "header",
+      "content": "Colors"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text",
+      "default": "#000000"
+    },
+    {
+      "type": "color",
+      "id": "divider_color",
+      "label": "Divider",
+      "default": "#e0e0e0"
+    },
+    {
+      "type": "color",
+      "id": "confirmation_bg_color",
+      "label": "Confirmation background",
+      "default": "#f5f5f5"
+    },
+    {
+      "type": "header",
+      "content": "Primary button"
+    },
+    {
+      "type": "color",
+      "id": "primary_button_color",
+      "label": "Background",
+      "default": "#000f9f"
+    },
+    {
+      "type": "color",
+      "id": "primary_button_text_color",
+      "label": "Text",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "primary_button_hover_color",
+      "label": "Hover background",
+      "default": "#000000"
+    },
+    {
+      "type": "header",
+      "content": "Secondary button"
+    },
+    {
+      "type": "color",
+      "id": "secondary_button_color",
+      "label": "Background",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "secondary_button_text_color",
+      "label": "Text",
+      "default": "#000000"
+    },
+    {
+      "type": "color",
+      "id": "secondary_button_border_color",
+      "label": "Border",
+      "default": "#cccccc"
+    },
+    {
+      "type": "color",
+      "id": "secondary_button_hover_color",
+      "label": "Hover background",
+      "default": "#f5f5f5"
+    },
+    {
+      "type": "header",
+      "content": "Typography"
+    },
+    {
+      "type": "range",
+      "id": "heading_size",
+      "label": "Heading size",
+      "min": 16,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 24
+    },
+    {
+      "type": "range",
+      "id": "subheading_size",
+      "label": "Subheading size",
+      "min": 14,
+      "max": 28,
+      "step": 2,
+      "unit": "px",
+      "default": 18
+    },
+    {
+      "type": "range",
+      "id": "text_size",
+      "label": "Text size",
+      "min": 12,
+      "max": 20,
+      "step": 1,
+      "unit": "px",
+      "default": 14
+    },
+    {
+      "type": "range",
+      "id": "button_text_size",
+      "label": "Button text size",
+      "min": 12,
+      "max": 20,
+      "step": 1,
+      "unit": "px",
+      "default": 14
+    },
+    {
+      "type": "range",
+      "id": "button_border_radius",
+      "label": "Button border radius",
+      "min": 0,
+      "max": 30,
+      "step": 2,
+      "unit": "px",
+      "default": 6
+    }
+  ],
+  "presets": [
+    {
+      "name": "Medical form gate"
+    }
+  ]
+}
+{% endschema %}

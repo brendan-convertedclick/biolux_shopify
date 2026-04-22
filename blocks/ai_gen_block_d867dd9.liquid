@@ -1,0 +1,676 @@
+{% doc %}
+  @prompt
+    2 coulumn section one column witha map view of the business location, the other a contact form 
+{% enddoc %}
+{% assign ai_gen_id = block.id | replace: '_', '' | downcase %}
+
+{% style %}
+  .ai-contact-section-{{ ai_gen_id }} {
+    display: block;
+    width: {{ block.settings.desktop_width_percent }}%;
+    max-width: 100%;
+    margin: 0 auto;
+  }
+
+  .ai-contact-grid-{{ ai_gen_id }} {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: {{ block.settings.column_gap }}px;
+  }
+
+  .ai-contact-map-column-{{ ai_gen_id }},
+  .ai-contact-form-column-{{ ai_gen_id }} {
+    width: 100%;
+  }
+
+  .ai-contact-map-wrapper-{{ ai_gen_id }} {
+    width: 100%;
+    height: {{ block.settings.map_height }}px;
+    border-radius: {{ block.settings.border_radius }}px;
+    overflow: hidden;
+    background-color: {{ block.settings.map_background_color }};
+  }
+
+  .ai-contact-map-wrapper-{{ ai_gen_id }} iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+
+  .ai-contact-map-placeholder-{{ ai_gen_id }} {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: {{ block.settings.map_background_color }};
+    color: {{ block.settings.placeholder_text_color }};
+    text-align: center;
+    padding: 20px;
+    font-size: 14px;
+  }
+
+  .ai-contact-form-wrapper-{{ ai_gen_id }} {
+    background-color: {{ block.settings.form_background_color }};
+    padding: {{ block.settings.form_padding }}px;
+    border-radius: {{ block.settings.border_radius }}px;
+  }
+
+  .ai-contact-form-heading-{{ ai_gen_id }} {
+    margin: 0 0 {{ block.settings.heading_spacing }}px;
+    color: {{ block.settings.form_text_color }};
+    font-size: {{ block.settings.heading_size }}px;
+  }
+
+  .ai-contact-form-{{ ai_gen_id }} {
+    display: flex;
+    flex-direction: column;
+    gap: {{ block.settings.field_spacing }}px;
+  }
+
+  .ai-contact-form-field-{{ ai_gen_id }} {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .ai-contact-form-label-{{ ai_gen_id }} {
+    color: {{ block.settings.form_text_color }};
+    font-size: {{ block.settings.label_size }}px;
+    font-weight: 500;
+  }
+
+  .ai-contact-form-input-{{ ai_gen_id }},
+  .ai-contact-form-textarea-{{ ai_gen_id }} {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid {{ block.settings.input_border_color }};
+    border-radius: {{ block.settings.input_border_radius }}px;
+    background-color: {{ block.settings.input_background_color }};
+    color: {{ block.settings.form_text_color }};
+    font-size: 14px;
+    font-family: inherit;
+  }
+
+  .ai-contact-form-textarea-{{ ai_gen_id }} {
+    min-height: 120px;
+    resize: vertical;
+  }
+
+  .ai-contact-form-input-{{ ai_gen_id }}:focus,
+  .ai-contact-form-textarea-{{ ai_gen_id }}:focus {
+    outline: 2px solid {{ block.settings.input_focus_color }};
+    outline-offset: 2px;
+  }
+
+  .ai-contact-form-button-{{ ai_gen_id }} {
+    padding: 14px 32px;
+    background-color: {{ block.settings.button_background_color }};
+    color: {{ block.settings.button_text_color }};
+    border: none;
+    border-radius: {{ block.settings.button_border_radius }}px;
+    font-size: {{ block.settings.button_font_size }}px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    text-transform: {{ block.settings.button_text_transform }};
+  }
+
+  .ai-contact-form-button-{{ ai_gen_id }}:hover {
+    background-color: {{ block.settings.button_hover_color }};
+  }
+
+  .ai-contact-form-success-{{ ai_gen_id }} {
+    padding: 12px 16px;
+    background-color: {{ block.settings.success_background_color }};
+    color: {{ block.settings.success_text_color }};
+    border-radius: {{ block.settings.input_border_radius }}px;
+    margin-bottom: {{ block.settings.field_spacing }}px;
+  }
+
+  .ai-contact-form-error-{{ ai_gen_id }} {
+    padding: 12px 16px;
+    background-color: {{ block.settings.error_background_color }};
+    color: {{ block.settings.error_text_color }};
+    border-radius: {{ block.settings.input_border_radius }}px;
+    margin-bottom: {{ block.settings.field_spacing }}px;
+  }
+
+  @media screen and (max-width: 749px) {
+    .ai-contact-grid-{{ ai_gen_id }} {
+      grid-template-columns: 1fr;
+      gap: {{ block.settings.mobile_gap }}px;
+    }
+
+    .ai-contact-map-wrapper-{{ ai_gen_id }} {
+      height: {{ block.settings.mobile_map_height }}px;
+    }
+
+    .ai-contact-form-wrapper-{{ ai_gen_id }} {
+      padding: {{ block.settings.mobile_form_padding }}px;
+    }
+  }
+{% endstyle %}
+
+<div class="ai-contact-section-{{ ai_gen_id }}" {{ block.shopify_attributes }}>
+  <div class="ai-contact-grid-{{ ai_gen_id }}">
+    <div class="ai-contact-map-column-{{ ai_gen_id }}">
+      <div class="ai-contact-map-wrapper-{{ ai_gen_id }}">
+        {% if block.settings.map_embed_url != blank %}
+          <iframe
+            src="{{ block.settings.map_embed_url }}"
+            allowfullscreen
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+            title="Business location map"
+          ></iframe>
+        {% else %}
+          <div class="ai-contact-map-placeholder-{{ ai_gen_id }}">
+            <div>
+              <p style="margin: 0 0 8px;">Add your Google Maps embed URL</p>
+              <p style="margin: 0; font-size: 12px; opacity: 0.8;">Get it from Google Maps → Share → Embed a map</p>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="ai-contact-form-column-{{ ai_gen_id }}">
+      <div class="ai-contact-form-wrapper-{{ ai_gen_id }}">
+        {% if block.settings.form_heading != blank %}
+          <h2 class="ai-contact-form-heading-{{ ai_gen_id }}">{{ block.settings.form_heading }}</h2>
+        {% endif %}
+
+        {%- form 'contact' -%}
+          {%- if form.posted_successfully? -%}
+            <div
+              class="ai-contact-form-success-{{ ai_gen_id }}"
+              id="ai-contact-form-success-{{ ai_gen_id }}"
+            >
+              {{ block.settings.success_message }}
+            </div>
+          {%- endif -%}
+
+          {%- if form.errors -%}
+            <div
+              class="ai-contact-form-error-{{ ai_gen_id }}"
+              id="ai-contact-form-error-{{ ai_gen_id }}"
+            >
+              {{ form.errors.messages | first }}
+            </div>
+          {%- endif -%}
+
+          <div class="ai-contact-form-{{ ai_gen_id }}">
+            <div class="ai-contact-form-field-{{ ai_gen_id }}">
+              <label for="contact-name-{{ ai_gen_id }}" class="ai-contact-form-label-{{ ai_gen_id }}">
+                {{ block.settings.name_label }}
+              </label>
+              <input
+                type="text"
+                id="contact-name-{{ ai_gen_id }}"
+                name="contact[name]"
+                class="ai-contact-form-input-{{ ai_gen_id }}"
+                value="{{ form.name }}"
+                placeholder="{{ block.settings.name_placeholder }}"
+                {% if block.settings.name_required %}required{% endif %}
+                {% if form.errors %}
+                  aria-describedby="ai-contact-form-error-{{ ai_gen_id }}"
+                {% endif %}
+              >
+            </div>
+
+            <div class="ai-contact-form-field-{{ ai_gen_id }}">
+              <label for="contact-email-{{ ai_gen_id }}" class="ai-contact-form-label-{{ ai_gen_id }}">
+                {{ block.settings.email_label }}
+              </label>
+              <input
+                type="email"
+                id="contact-email-{{ ai_gen_id }}"
+                name="contact[email]"
+                class="ai-contact-form-input-{{ ai_gen_id }}"
+                value="{{ form.email }}"
+                placeholder="{{ block.settings.email_placeholder }}"
+                autocomplete="email"
+                required
+                {% if form.errors %}
+                  aria-invalid="true"
+                  aria-describedby="ai-contact-form-error-{{ ai_gen_id }}"
+                {% endif %}
+                {% if form.posted_successfully? %}
+                  aria-describedby="ai-contact-form-success-{{ ai_gen_id }}"
+                {% endif %}
+              >
+            </div>
+
+            {% if block.settings.show_phone_field %}
+              <div class="ai-contact-form-field-{{ ai_gen_id }}">
+                <label for="contact-phone-{{ ai_gen_id }}" class="ai-contact-form-label-{{ ai_gen_id }}">
+                  {{ block.settings.phone_label }}
+                </label>
+                <input
+                  type="tel"
+                  id="contact-phone-{{ ai_gen_id }}"
+                  name="contact[phone]"
+                  class="ai-contact-form-input-{{ ai_gen_id }}"
+                  value="{{ form.phone }}"
+                  placeholder="{{ block.settings.phone_placeholder }}"
+                  autocomplete="tel"
+                  {% if block.settings.phone_required %}required{% endif %}
+                >
+              </div>
+            {% endif %}
+
+            <div class="ai-contact-form-field-{{ ai_gen_id }}">
+              <label for="contact-message-{{ ai_gen_id }}" class="ai-contact-form-label-{{ ai_gen_id }}">
+                {{ block.settings.message_label }}
+              </label>
+              <textarea
+                id="contact-message-{{ ai_gen_id }}"
+                name="contact[body]"
+                class="ai-contact-form-textarea-{{ ai_gen_id }}"
+                placeholder="{{ block.settings.message_placeholder }}"
+                {% if block.settings.message_required %}required{% endif %}
+              >{{ form.body }}</textarea>
+            </div>
+
+            <button type="submit" class="ai-contact-form-button-{{ ai_gen_id }}">
+              {{ block.settings.button_text }}
+            </button>
+          </div>
+        {%- endform -%}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Contact map and form",
+  "tag": null,
+  "settings": [
+    {
+      "type": "header",
+      "content": "Layout"
+    },
+    {
+      "type": "range",
+      "id": "desktop_width_percent",
+      "label": "Desktop width",
+      "min": 50,
+      "max": 100,
+      "step": 5,
+      "unit": "%",
+      "default": 100
+    },
+    {
+      "type": "range",
+      "id": "column_gap",
+      "label": "Column gap",
+      "min": 0,
+      "max": 80,
+      "step": 4,
+      "unit": "px",
+      "default": 40
+    },
+    {
+      "type": "range",
+      "id": "mobile_gap",
+      "label": "Mobile gap",
+      "min": 0,
+      "max": 60,
+      "step": 4,
+      "unit": "px",
+      "default": 32
+    },
+    {
+      "type": "range",
+      "id": "border_radius",
+      "label": "Border radius",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 8
+    },
+    {
+      "type": "header",
+      "content": "Map"
+    },
+    {
+      "type": "text",
+      "id": "map_embed_url",
+      "label": "Google Maps embed URL",
+      "info": "Get from Google Maps → Share → Embed a map"
+    },
+    {
+      "type": "range",
+      "id": "map_height",
+      "label": "Map height (desktop)",
+      "min": 300,
+      "max": 800,
+      "step": 20,
+      "unit": "px",
+      "default": 500
+    },
+    {
+      "type": "range",
+      "id": "mobile_map_height",
+      "label": "Map height (mobile)",
+      "min": 200,
+      "max": 600,
+      "step": 20,
+      "unit": "px",
+      "default": 300
+    },
+    {
+      "type": "color",
+      "id": "map_background_color",
+      "label": "Background color",
+      "default": "#f4f4f4"
+    },
+    {
+      "type": "color",
+      "id": "placeholder_text_color",
+      "label": "Placeholder text color",
+      "default": "#666666"
+    },
+    {
+      "type": "header",
+      "content": "Form"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "form_heading",
+      "label": "Heading",
+      "default": "Get in touch"
+    },
+    {
+      "type": "range",
+      "id": "heading_size",
+      "label": "Heading size",
+      "min": 16,
+      "max": 48,
+      "step": 2,
+      "unit": "px",
+      "default": 28
+    },
+    {
+      "type": "range",
+      "id": "heading_spacing",
+      "label": "Heading spacing",
+      "min": 8,
+      "max": 40,
+      "step": 4,
+      "unit": "px",
+      "default": 24
+    },
+    {
+      "type": "color",
+      "id": "form_background_color",
+      "label": "Background color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "form_text_color",
+      "label": "Text color",
+      "default": "#1c1c1c"
+    },
+    {
+      "type": "range",
+      "id": "form_padding",
+      "label": "Padding (desktop)",
+      "min": 0,
+      "max": 80,
+      "step": 4,
+      "unit": "px",
+      "default": 40
+    },
+    {
+      "type": "range",
+      "id": "mobile_form_padding",
+      "label": "Padding (mobile)",
+      "min": 0,
+      "max": 60,
+      "step": 4,
+      "unit": "px",
+      "default": 24
+    },
+    {
+      "type": "range",
+      "id": "field_spacing",
+      "label": "Field spacing",
+      "min": 8,
+      "max": 40,
+      "step": 4,
+      "unit": "px",
+      "default": 20
+    },
+    {
+      "type": "header",
+      "content": "Form fields"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "name_label",
+      "label": "Name label",
+      "default": "Name"
+    },
+    {
+      "type": "text",
+      "id": "name_placeholder",
+      "label": "Name placeholder"
+    },
+    {
+      "type": "checkbox",
+      "id": "name_required",
+      "label": "Name required",
+      "default": true
+    },
+    {
+      "type": "inline_richtext",
+      "id": "email_label",
+      "label": "Email label",
+      "default": "Email"
+    },
+    {
+      "type": "text",
+      "id": "email_placeholder",
+      "label": "Email placeholder"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_phone_field",
+      "label": "Show phone field",
+      "default": true
+    },
+    {
+      "type": "inline_richtext",
+      "id": "phone_label",
+      "label": "Phone label",
+      "default": "Phone"
+    },
+    {
+      "type": "text",
+      "id": "phone_placeholder",
+      "label": "Phone placeholder"
+    },
+    {
+      "type": "checkbox",
+      "id": "phone_required",
+      "label": "Phone required",
+      "default": false
+    },
+    {
+      "type": "inline_richtext",
+      "id": "message_label",
+      "label": "Message label",
+      "default": "Message"
+    },
+    {
+      "type": "text",
+      "id": "message_placeholder",
+      "label": "Message placeholder"
+    },
+    {
+      "type": "checkbox",
+      "id": "message_required",
+      "label": "Message required",
+      "default": true
+    },
+    {
+      "type": "range",
+      "id": "label_size",
+      "label": "Label size",
+      "min": 12,
+      "max": 20,
+      "step": 1,
+      "unit": "px",
+      "default": 14
+    },
+    {
+      "type": "header",
+      "content": "Input style"
+    },
+    {
+      "type": "color",
+      "id": "input_background_color",
+      "label": "Background color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "input_border_color",
+      "label": "Border color",
+      "default": "#cccccc"
+    },
+    {
+      "type": "color",
+      "id": "input_focus_color",
+      "label": "Focus color",
+      "default": "#b29964"
+    },
+    {
+      "type": "range",
+      "id": "input_border_radius",
+      "label": "Border radius",
+      "min": 0,
+      "max": 20,
+      "step": 2,
+      "unit": "px",
+      "default": 4
+    },
+    {
+      "type": "header",
+      "content": "Button"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "button_text",
+      "label": "Button text",
+      "default": "Send message"
+    },
+    {
+      "type": "color",
+      "id": "button_background_color",
+      "label": "Background color",
+      "default": "#b29964"
+    },
+    {
+      "type": "color",
+      "id": "button_hover_color",
+      "label": "Hover color",
+      "default": "#9a8456"
+    },
+    {
+      "type": "color",
+      "id": "button_text_color",
+      "label": "Text color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "range",
+      "id": "button_font_size",
+      "label": "Font size",
+      "min": 12,
+      "max": 20,
+      "step": 1,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "button_border_radius",
+      "label": "Border radius",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 4
+    },
+    {
+      "type": "select",
+      "id": "button_text_transform",
+      "label": "Text transform",
+      "options": [
+        {
+          "value": "none",
+          "label": "None"
+        },
+        {
+          "value": "uppercase",
+          "label": "Uppercase"
+        },
+        {
+          "value": "lowercase",
+          "label": "Lowercase"
+        },
+        {
+          "value": "capitalize",
+          "label": "Capitalize"
+        }
+      ],
+      "default": "uppercase"
+    },
+    {
+      "type": "header",
+      "content": "Messages"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "success_message",
+      "label": "Success message",
+      "default": "Thanks for contacting us. We'll get back to you as soon as possible."
+    },
+    {
+      "type": "color",
+      "id": "success_background_color",
+      "label": "Success background",
+      "default": "#d4edda"
+    },
+    {
+      "type": "color",
+      "id": "success_text_color",
+      "label": "Success text",
+      "default": "#155724"
+    },
+    {
+      "type": "color",
+      "id": "error_background_color",
+      "label": "Error background",
+      "default": "#f8d7da"
+    },
+    {
+      "type": "color",
+      "id": "error_text_color",
+      "label": "Error text",
+      "default": "#721c24"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Contact map and form"
+    }
+  ]
+}
+{% endschema %}

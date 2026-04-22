@@ -1,0 +1,626 @@
+{% doc %}
+  @prompt
+    A toggle button that asks the user if the provided information is still the same. Below the toggle, there will be 2 buttons: one that says "Proceed to Checkout" if the toggle button is "Yes," and another that says "Update Medical Check." if customer is sign in if not show sign in and hide the toggle  and proceed to check out button.  If customer already signed in hide sign in button, control section alignment. Add instruction above button that states user needs to sign in to be able to check out an d make sure that the Medical check form was submitted. check customer tags if there is red flag or green flag all to add ctom message for either. If there are no tags show message " Please submit the  medical check form.  According to the tags the red flag doesn't see proceed to check out button
+    
+    Instead of link for Update Medical Info please use this <div class="upform-container" style="display: none !important;" data-id="a6e76e"></div> or have a liquid block for me to add the code
+{% enddoc %}
+{% assign ai_gen_id = block.id | replace: '_', '' | downcase %}
+
+{% style %}
+  .ai-checkout-gate-{{ ai_gen_id }} {
+    display: block;
+    width: {{ block.settings.desktop_width_percent }}%;
+    max-width: 100%;
+    padding: {{ block.settings.padding }}px;
+    background-color: {{ block.settings.background_color }};
+    border-radius: {{ block.settings.border_radius }}px;
+    text-align: {{ block.settings.alignment }};
+  }
+
+  .ai-checkout-gate__instruction-{{ ai_gen_id }} {
+    font-size: {{ block.settings.instruction_font_size }}px;
+    color: {{ block.settings.instruction_color }};
+    margin-bottom: 20px;
+  }
+
+  .ai-checkout-gate__message-{{ ai_gen_id }} {
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: {{ block.settings.message_font_size }}px;
+  }
+
+  .ai-checkout-gate__message--success-{{ ai_gen_id }} {
+    background-color: {{ block.settings.success_bg_color }};
+    color: {{ block.settings.success_text_color }};
+  }
+
+  .ai-checkout-gate__message--warning-{{ ai_gen_id }} {
+    background-color: {{ block.settings.warning_bg_color }};
+    color: {{ block.settings.warning_text_color }};
+  }
+
+  .ai-checkout-gate__message--error-{{ ai_gen_id }} {
+    background-color: {{ block.settings.error_bg_color }};
+    color: {{ block.settings.error_text_color }};
+  }
+
+  .ai-checkout-gate__toggle-wrapper-{{ ai_gen_id }} {
+    margin-bottom: 24px;
+  }
+
+  .ai-checkout-gate__toggle-label-{{ ai_gen_id }} {
+    display: flex;
+    align-items: center;
+    justify-content: {{ block.settings.alignment }};
+    gap: 12px;
+    cursor: pointer;
+    font-size: {{ block.settings.toggle_font_size }}px;
+    color: {{ block.settings.text_color }};
+  }
+
+  .ai-checkout-gate__toggle-switch-{{ ai_gen_id }} {
+    position: relative;
+    width: 60px;
+    height: 30px;
+    background-color: {{ block.settings.toggle_off_color }};
+    border-radius: 15px;
+    transition: background-color 0.3s ease;
+  }
+
+  .ai-checkout-gate__toggle-switch-{{ ai_gen_id }}::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 24px;
+    height: 24px;
+    background-color: #ffffff;
+    border-radius: 50%;
+    transition: transform 0.3s ease;
+  }
+
+  .ai-checkout-gate__toggle-input-{{ ai_gen_id }}:checked + .ai-checkout-gate__toggle-label-{{ ai_gen_id }} .ai-checkout-gate__toggle-switch-{{ ai_gen_id }} {
+    background-color: {{ block.settings.toggle_on_color }};
+  }
+
+  .ai-checkout-gate__toggle-input-{{ ai_gen_id }}:checked + .ai-checkout-gate__toggle-label-{{ ai_gen_id }} .ai-checkout-gate__toggle-switch-{{ ai_gen_id }}::after {
+    transform: translateX(30px);
+  }
+
+  .ai-checkout-gate__toggle-input-{{ ai_gen_id }} {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .ai-checkout-gate__buttons-{{ ai_gen_id }} {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: {{ block.settings.alignment }};
+  }
+
+  .ai-checkout-gate__button-{{ ai_gen_id }} {
+    padding: {{ block.settings.button_padding }}px {{ block.settings.button_padding | times: 2 }}px;
+    border-radius: {{ block.settings.button_border_radius }}px;
+    font-size: {{ block.settings.button_font_size }}px;
+    text-transform: {{ block.settings.button_text_transform }};
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  .ai-checkout-gate__button--primary-{{ ai_gen_id }} {
+    background-color: {{ block.settings.primary_button_bg }};
+    color: {{ block.settings.primary_button_text }};
+  }
+
+  .ai-checkout-gate__button--primary-{{ ai_gen_id }}:hover {
+    background-color: {{ block.settings.primary_button_hover_bg }};
+  }
+
+  .ai-checkout-gate__button--secondary-{{ ai_gen_id }} {
+    background-color: {{ block.settings.secondary_button_bg }};
+    color: {{ block.settings.secondary_button_text }};
+  }
+
+  .ai-checkout-gate__button--secondary-{{ ai_gen_id }}:hover {
+    background-color: {{ block.settings.secondary_button_hover_bg }};
+  }
+
+  .ai-checkout-gate__hidden-{{ ai_gen_id }} {
+    display: none;
+  }
+
+  .ai-checkout-gate__upform-container-{{ ai_gen_id }} {
+    margin-top: 12px;
+  }
+
+  @media screen and (max-width: 749px) {
+    .ai-checkout-gate-{{ ai_gen_id }} {
+      width: 100%;
+    }
+  }
+{% endstyle %}
+
+<checkout-gate-{{ ai_gen_id }}
+  class="ai-checkout-gate-{{ ai_gen_id }}"
+  {{ block.shopify_attributes }}
+  data-customer-logged-in="{% if customer %}true{% else %}false{% endif %}"
+  data-customer-tags="{{ customer.tags | join: ',' }}"
+>
+  {% if customer %}
+    {% assign has_green_flag = false %}
+    {% assign has_red_flag = false %}
+    {% assign has_any_flag = false %}
+
+    {% for tag in customer.tags %}
+      {% assign tag_lower = tag | downcase %}
+      {% if tag_lower contains 'green' and tag_lower contains 'flag' %}
+        {% assign has_green_flag = true %}
+        {% assign has_any_flag = true %}
+      {% endif %}
+      {% if tag_lower contains 'red' and tag_lower contains 'flag' %}
+        {% assign has_red_flag = true %}
+        {% assign has_any_flag = true %}
+      {% endif %}
+    {% endfor %}
+
+    {% if has_any_flag == false %}
+      <div class="ai-checkout-gate__message-{{ ai_gen_id }} ai-checkout-gate__message--warning-{{ ai_gen_id }}">
+        {{ block.settings.no_tags_message }}
+      </div>
+    {% elsif has_green_flag %}
+      <div class="ai-checkout-gate__message-{{ ai_gen_id }} ai-checkout-gate__message--success-{{ ai_gen_id }}">
+        {{ block.settings.green_flag_message }}
+      </div>
+
+      <div class="ai-checkout-gate__toggle-wrapper-{{ ai_gen_id }}">
+        <input
+          type="checkbox"
+          id="ai-checkout-gate-toggle-{{ ai_gen_id }}"
+          class="ai-checkout-gate__toggle-input-{{ ai_gen_id }}"
+        >
+        <label
+          for="ai-checkout-gate-toggle-{{ ai_gen_id }}"
+          class="ai-checkout-gate__toggle-label-{{ ai_gen_id }}"
+        >
+          <span>{{ block.settings.toggle_question }}</span>
+          <span class="ai-checkout-gate__toggle-switch-{{ ai_gen_id }}"></span>
+        </label>
+      </div>
+
+      <div class="ai-checkout-gate__buttons-{{ ai_gen_id }}">
+        <a
+          href="/checkout"
+          class="ai-checkout-gate__button-{{ ai_gen_id }} ai-checkout-gate__button--primary-{{ ai_gen_id }} ai-checkout-gate__checkout-btn-{{ ai_gen_id }} ai-checkout-gate__hidden-{{ ai_gen_id }}"
+        >
+          {{ block.settings.proceed_button_text }}
+        </a>
+
+        <button
+          type="button"
+          class="ai-checkout-gate__button-{{ ai_gen_id }} ai-checkout-gate__button--secondary-{{ ai_gen_id }} ai-checkout-gate__update-btn-{{ ai_gen_id }}"
+        >
+          {{ block.settings.update_button_text }}
+        </button>
+
+        {% if block.settings.upform_code != blank %}
+          <div class="ai-checkout-gate__upform-container-{{ ai_gen_id }} ai-checkout-gate__hidden-{{ ai_gen_id }}">
+            {{ block.settings.upform_code }}
+          </div>
+        {% endif %}
+      </div>
+    {% elsif has_red_flag %}
+      <div class="ai-checkout-gate__message-{{ ai_gen_id }} ai-checkout-gate__message--error-{{ ai_gen_id }}">
+        {{ block.settings.red_flag_message }}
+      </div>
+
+      <div class="ai-checkout-gate__buttons-{{ ai_gen_id }}">
+        <button
+          type="button"
+          class="ai-checkout-gate__button-{{ ai_gen_id }} ai-checkout-gate__button--secondary-{{ ai_gen_id }} ai-checkout-gate__update-btn-{{ ai_gen_id }}"
+        >
+          {{ block.settings.update_button_text }}
+        </button>
+
+        {% if block.settings.upform_code != blank %}
+          <div class="ai-checkout-gate__upform-container-{{ ai_gen_id }} ai-checkout-gate__hidden-{{ ai_gen_id }}">
+            {{ block.settings.upform_code }}
+          </div>
+        {% endif %}
+      </div>
+    {% endif %}
+  {% else %}
+    <div class="ai-checkout-gate__instruction-{{ ai_gen_id }}">
+      {{ block.settings.signin_instruction }}
+    </div>
+
+    <div class="ai-checkout-gate__buttons-{{ ai_gen_id }}">
+      <a
+        href="/account/login"
+        class="ai-checkout-gate__button-{{ ai_gen_id }} ai-checkout-gate__button--primary-{{ ai_gen_id }}"
+      >
+        {{ block.settings.signin_button_text }}
+      </a>
+    </div>
+  {% endif %}
+</checkout-gate-{{ ai_gen_id }}>
+
+<script>
+  (function() {
+    class CheckoutGate{{ ai_gen_id }} extends HTMLElement {
+      constructor() {
+        super();
+      }
+
+      connectedCallback() {
+        this.toggle = this.querySelector('.ai-checkout-gate__toggle-input-{{ ai_gen_id }}');
+        this.checkoutBtn = this.querySelector('.ai-checkout-gate__checkout-btn-{{ ai_gen_id }}');
+        this.updateBtn = this.querySelector('.ai-checkout-gate__update-btn-{{ ai_gen_id }}');
+        this.upformContainer = this.querySelector('.ai-checkout-gate__upform-container-{{ ai_gen_id }}');
+
+        if (this.toggle) {
+          this.toggle.addEventListener('change', this.handleToggleChange.bind(this));
+        }
+
+        if (this.updateBtn) {
+          this.updateBtn.addEventListener('click', this.handleUpdateClick.bind(this));
+        }
+      }
+
+      handleToggleChange() {
+        if (this.toggle.checked && this.checkoutBtn) {
+          this.checkoutBtn.classList.remove('ai-checkout-gate__hidden-{{ ai_gen_id }}');
+        } else if (this.checkoutBtn) {
+          this.checkoutBtn.classList.add('ai-checkout-gate__hidden-{{ ai_gen_id }}');
+        }
+      }
+
+      handleUpdateClick() {
+        if (this.upformContainer) {
+          this.upformContainer.classList.toggle('ai-checkout-gate__hidden-{{ ai_gen_id }}');
+        }
+      }
+    }
+
+    customElements.define('checkout-gate-{{ ai_gen_id }}', CheckoutGate{{ ai_gen_id }});
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Checkout gate",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Layout"
+    },
+    {
+      "type": "select",
+      "id": "alignment",
+      "label": "Alignment",
+      "options": [
+        {
+          "value": "flex-start",
+          "label": "Left"
+        },
+        {
+          "value": "center",
+          "label": "Center"
+        },
+        {
+          "value": "flex-end",
+          "label": "Right"
+        }
+      ],
+      "default": "center"
+    },
+    {
+      "type": "range",
+      "id": "desktop_width_percent",
+      "label": "Desktop width",
+      "min": 50,
+      "max": 100,
+      "step": 5,
+      "unit": "%",
+      "default": 100
+    },
+    {
+      "type": "range",
+      "id": "padding",
+      "label": "Padding",
+      "min": 0,
+      "max": 60,
+      "step": 5,
+      "unit": "px",
+      "default": 30
+    },
+    {
+      "type": "range",
+      "id": "border_radius",
+      "label": "Border radius",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 8
+    },
+    {
+      "type": "header",
+      "content": "Sign in state"
+    },
+    {
+      "type": "richtext",
+      "id": "signin_instruction",
+      "label": "Sign in instruction",
+      "default": "<p>Please sign in to verify your medical eligibility and proceed to checkout.</p>"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "signin_button_text",
+      "label": "Sign in button text",
+      "default": "Sign in"
+    },
+    {
+      "type": "header",
+      "content": "Toggle question"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "toggle_question",
+      "label": "Toggle question",
+      "default": "Is your medical information still the same?"
+    },
+    {
+      "type": "header",
+      "content": "Messages"
+    },
+    {
+      "type": "richtext",
+      "id": "green_flag_message",
+      "label": "Green flag message",
+      "default": "<p>Your medical eligibility has been approved. You may proceed to checkout.</p>"
+    },
+    {
+      "type": "richtext",
+      "id": "red_flag_message",
+      "label": "Red flag message",
+      "default": "<p>Your medical information requires review. Please update your medical check form or contact support.</p>"
+    },
+    {
+      "type": "richtext",
+      "id": "no_tags_message",
+      "label": "No tags message",
+      "default": "<p>Please submit the medical check form before proceeding to checkout.</p>"
+    },
+    {
+      "type": "header",
+      "content": "Buttons"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "proceed_button_text",
+      "label": "Proceed button text",
+      "default": "Proceed to checkout"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "update_button_text",
+      "label": "Update button text",
+      "default": "Update medical info"
+    },
+    {
+      "type": "header",
+      "content": "Form integration"
+    },
+    {
+      "type": "html",
+      "id": "upform_code",
+      "label": "Form embed code"
+    },
+    {
+      "type": "header",
+      "content": "Colors"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text",
+      "default": "#1c1c1c"
+    },
+    {
+      "type": "color",
+      "id": "instruction_color",
+      "label": "Instruction text",
+      "default": "#1c1c1c"
+    },
+    {
+      "type": "color",
+      "id": "success_bg_color",
+      "label": "Success background",
+      "default": "#d4edda"
+    },
+    {
+      "type": "color",
+      "id": "success_text_color",
+      "label": "Success text",
+      "default": "#155724"
+    },
+    {
+      "type": "color",
+      "id": "warning_bg_color",
+      "label": "Warning background",
+      "default": "#fff3cd"
+    },
+    {
+      "type": "color",
+      "id": "warning_text_color",
+      "label": "Warning text",
+      "default": "#856404"
+    },
+    {
+      "type": "color",
+      "id": "error_bg_color",
+      "label": "Error background",
+      "default": "#f8d7da"
+    },
+    {
+      "type": "color",
+      "id": "error_text_color",
+      "label": "Error text",
+      "default": "#721c24"
+    },
+    {
+      "type": "color",
+      "id": "toggle_on_color",
+      "label": "Toggle on",
+      "default": "#28a745"
+    },
+    {
+      "type": "color",
+      "id": "toggle_off_color",
+      "label": "Toggle off",
+      "default": "#cccccc"
+    },
+    {
+      "type": "color",
+      "id": "primary_button_bg",
+      "label": "Primary button background",
+      "default": "#b29964"
+    },
+    {
+      "type": "color",
+      "id": "primary_button_text",
+      "label": "Primary button text",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "primary_button_hover_bg",
+      "label": "Primary button hover",
+      "default": "#9a8254"
+    },
+    {
+      "type": "color",
+      "id": "secondary_button_bg",
+      "label": "Secondary button background",
+      "default": "#6c757d"
+    },
+    {
+      "type": "color",
+      "id": "secondary_button_text",
+      "label": "Secondary button text",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "secondary_button_hover_bg",
+      "label": "Secondary button hover",
+      "default": "#5a6268"
+    },
+    {
+      "type": "header",
+      "content": "Typography"
+    },
+    {
+      "type": "range",
+      "id": "instruction_font_size",
+      "label": "Instruction font size",
+      "min": 12,
+      "max": 24,
+      "step": 1,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "message_font_size",
+      "label": "Message font size",
+      "min": 12,
+      "max": 24,
+      "step": 1,
+      "unit": "px",
+      "default": 14
+    },
+    {
+      "type": "range",
+      "id": "toggle_font_size",
+      "label": "Toggle font size",
+      "min": 12,
+      "max": 24,
+      "step": 1,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "button_font_size",
+      "label": "Button font size",
+      "min": 12,
+      "max": 24,
+      "step": 1,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "select",
+      "id": "button_text_transform",
+      "label": "Button text transform",
+      "options": [
+        {
+          "value": "none",
+          "label": "None"
+        },
+        {
+          "value": "uppercase",
+          "label": "Uppercase"
+        },
+        {
+          "value": "lowercase",
+          "label": "Lowercase"
+        },
+        {
+          "value": "capitalize",
+          "label": "Capitalize"
+        }
+      ],
+      "default": "uppercase"
+    },
+    {
+      "type": "range",
+      "id": "button_padding",
+      "label": "Button padding",
+      "min": 8,
+      "max": 24,
+      "step": 2,
+      "unit": "px",
+      "default": 12
+    },
+    {
+      "type": "range",
+      "id": "button_border_radius",
+      "label": "Button border radius",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 4
+    }
+  ],
+  "presets": [
+    {
+      "name": "Checkout gate"
+    }
+  ]
+}
+{% endschema %}

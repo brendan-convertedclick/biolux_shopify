@@ -1,0 +1,1025 @@
+{% doc %}
+  @prompt
+    Pre-Checkout Eligibility Form (5 Yes/No Questions in a Flow)
+    
+    Goal: Determine if the customer is eligible to purchase.
+    UI behavior:
+    
+    Show one question at a time.
+    
+    Provide Next and Previous buttons.
+    
+    Show a progress indicator (e.g., “Question 2 of 5”).
+    
+    Persist answers in session/storage so refresh/back doesn’t reset.
+    
+    Expected answers & gating:
+    
+    Each question has an expected answer (configurable per product or per collection).
+    
+    If the customer’s answers match all expected answers:
+    
+    Show the Continue to Checkout / Checkout button.
+    
+    If any answer deviates from expected:
+    
+    Hide the checkout button.
+    
+    Show a clear disclaimer panel:
+    
+    “Based on your answers, you are not eligible to purchase this product online. If you believe this is incorrect, please contact support.”
+    
+    Configuration requirements:
+    
+    Admin/dev must be able to define the 5 questions and expected answers:
+    
+    Ideally per product via metafields, or fallback to a global config.
+    
+    Keep the flow reusable (same component can be embedded on product page/cart drawer/cart page).
+    
+    Data capture:
+    
+    Save the eligibility result and answers to:
+    
+    cart attributes and/or checkout attributes (where supported), and
+    
+    order metadata/metafields once the order is placed.
+    
+    B) Embedded Checkout Form: “Quick Medical Check (under 60 seconds)”
+    
+    Placement: In checkout, after Shipping step (i.e., once shipping address/method is completed), show a compact panel titled:
+    
+    “Quick Medical Check (under 60 seconds)”
+    
+    Form fields:
+    
+    Full name, DOB, ID/passport (single grouped block)
+    
+    Current health status (radio buttons)
+    
+    Options: Great / Generally okay / Not great (or similar)
+    
+    Medical conditions (multi-select) including a “None” option
+    
+    “None” must behave as mutually exclusive (selecting it clears others)
+    
+    Medications/allergies (small text field)
+    
+    Main goal (radio buttons)
+    
+    weight / anti-aging / gut / energy / injury / immune / etc.
+    
+    Pregnancy/breastfeeding (Yes/No)
+    
+    Extra screening question (Yes/No):
+    
+    “Have you ever had a serious reaction to any peptide, hormone or weight-loss injection?”
+    
+    Consent checkbox (required):
+    
+    “I confirm my information is true and I consent to doctor review.”
+{% enddoc %}
+{% assign ai_gen_id = block.id | replace: '_', '' | downcase %}
+
+{% style %}
+  .ai-eligibility-form-{{ ai_gen_id }} {
+    display: block;
+    width: {{ block.settings.desktop_width_percent }}%;
+    max-width: 100%;
+    margin: 0 auto;
+    background-color: {{ block.settings.background_color }};
+    border-radius: {{ block.settings.border_radius }}px;
+    padding: 40px;
+    box-sizing: border-box;
+  }
+
+  .ai-eligibility-form__header-{{ ai_gen_id }} {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .ai-eligibility-form__title-{{ ai_gen_id }} {
+    font-size: {{ block.settings.title_size }}px;
+    color: {{ block.settings.text_color }};
+    margin: 0 0 12px;
+    font-weight: 600;
+  }
+
+  .ai-eligibility-form__subtitle-{{ ai_gen_id }} {
+    font-size: {{ block.settings.subtitle_size }}px;
+    color: {{ block.settings.text_color }};
+    opacity: 0.8;
+    margin: 0;
+  }
+
+  .ai-eligibility-form__progress-{{ ai_gen_id }} {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+
+  .ai-eligibility-form__progress-text-{{ ai_gen_id }} {
+    font-size: 14px;
+    color: {{ block.settings.text_color }};
+    font-weight: 500;
+  }
+
+  .ai-eligibility-form__progress-bar-{{ ai_gen_id }} {
+    width: 100%;
+    height: 8px;
+    background-color: {{ block.settings.progress_bg_color }};
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 32px;
+  }
+
+  .ai-eligibility-form__progress-fill-{{ ai_gen_id }} {
+    height: 100%;
+    background-color: {{ block.settings.progress_fill_color }};
+    transition: width 0.3s ease;
+  }
+
+  .ai-eligibility-form__question-container-{{ ai_gen_id }} {
+    min-height: 200px;
+  }
+
+  .ai-eligibility-form__question-{{ ai_gen_id }} {
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .ai-eligibility-form__question-{{ ai_gen_id }}.active {
+    display: block;
+    opacity: 1;
+  }
+
+  .ai-eligibility-form__question-text-{{ ai_gen_id }} {
+    font-size: {{ block.settings.question_size }}px;
+    color: {{ block.settings.text_color }};
+    margin: 0 0 24px;
+    font-weight: 500;
+    text-align: center;
+  }
+
+  .ai-eligibility-form__options-{{ ai_gen_id }} {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    margin-bottom: 32px;
+  }
+
+  .ai-eligibility-form__option-{{ ai_gen_id }} {
+    flex: 1;
+    max-width: 200px;
+    padding: 16px 32px;
+    background-color: {{ block.settings.option_bg_color }};
+    border: 2px solid {{ block.settings.option_border_color }};
+    border-radius: {{ block.settings.option_border_radius }}px;
+    color: {{ block.settings.text_color }};
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+  }
+
+  .ai-eligibility-form__option-{{ ai_gen_id }}:hover {
+    background-color: {{ block.settings.option_hover_bg_color }};
+    border-color: {{ block.settings.option_hover_border_color }};
+  }
+
+  .ai-eligibility-form__option-{{ ai_gen_id }}.selected {
+    background-color: {{ block.settings.option_selected_bg_color }};
+    border-color: {{ block.settings.option_selected_border_color }};
+    color: {{ block.settings.option_selected_text_color }};
+  }
+
+  .ai-eligibility-form__navigation-{{ ai_gen_id }} {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 24px;
+  }
+
+  .ai-eligibility-form__nav-button-{{ ai_gen_id }} {
+    padding: 14px 28px;
+    background-color: {{ block.settings.button_bg_color }};
+    color: {{ block.settings.button_text_color }};
+    border: none;
+    border-radius: {{ block.settings.button_border_radius }}px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .ai-eligibility-form__nav-button-{{ ai_gen_id }}:hover:not(:disabled) {
+    background-color: {{ block.settings.button_hover_bg_color }};
+  }
+
+  .ai-eligibility-form__nav-button-{{ ai_gen_id }}:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .ai-eligibility-form__nav-button-{{ ai_gen_id }}--secondary {
+    background-color: transparent;
+    color: {{ block.settings.text_color }};
+    border: 2px solid {{ block.settings.button_bg_color }};
+  }
+
+  .ai-eligibility-form__nav-button-{{ ai_gen_id }}--secondary:hover:not(:disabled) {
+    background-color: {{ block.settings.button_bg_color }};
+    color: {{ block.settings.button_text_color }};
+  }
+
+  .ai-eligibility-form__result-{{ ai_gen_id }} {
+    display: none;
+    text-align: center;
+    padding: 32px;
+    border-radius: {{ block.settings.border_radius }}px;
+  }
+
+  .ai-eligibility-form__result-{{ ai_gen_id }}.active {
+    display: block;
+  }
+
+  .ai-eligibility-form__result-{{ ai_gen_id }}--eligible {
+    background-color: {{ block.settings.success_bg_color }};
+    border: 2px solid {{ block.settings.success_border_color }};
+  }
+
+  .ai-eligibility-form__result-{{ ai_gen_id }}--ineligible {
+    background-color: {{ block.settings.error_bg_color }};
+    border: 2px solid {{ block.settings.error_border_color }};
+  }
+
+  .ai-eligibility-form__result-icon-{{ ai_gen_id }} {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 16px;
+  }
+
+  .ai-eligibility-form__result-title-{{ ai_gen_id }} {
+    font-size: 24px;
+    font-weight: 600;
+    margin: 0 0 12px;
+    color: {{ block.settings.text_color }};
+  }
+
+  .ai-eligibility-form__result-message-{{ ai_gen_id }} {
+    font-size: 16px;
+    line-height: 1.6;
+    margin: 0 0 24px;
+    color: {{ block.settings.text_color }};
+  }
+
+  .ai-eligibility-form__checkout-button-{{ ai_gen_id }} {
+    display: inline-block;
+    padding: 16px 40px;
+    background-color: {{ block.settings.checkout_button_bg_color }};
+    color: {{ block.settings.checkout_button_text_color }};
+    border: none;
+    border-radius: {{ block.settings.button_border_radius }}px;
+    font-size: 18px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .ai-eligibility-form__checkout-button-{{ ai_gen_id }}:hover {
+    background-color: {{ block.settings.checkout_button_hover_bg_color }};
+  }
+
+  .ai-eligibility-form__restart-button-{{ ai_gen_id }} {
+    display: inline-block;
+    padding: 12px 24px;
+    background-color: transparent;
+    color: {{ block.settings.text_color }};
+    border: 2px solid {{ block.settings.text_color }};
+    border-radius: {{ block.settings.button_border_radius }}px;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 12px;
+  }
+
+  .ai-eligibility-form__restart-button-{{ ai_gen_id }}:hover {
+    background-color: {{ block.settings.text_color }};
+    color: {{ block.settings.background_color }};
+  }
+
+  @media screen and (max-width: 749px) {
+    .ai-eligibility-form-{{ ai_gen_id }} {
+      padding: 24px;
+      width: 100%;
+    }
+
+    .ai-eligibility-form__options-{{ ai_gen_id }} {
+      flex-direction: column;
+    }
+
+    .ai-eligibility-form__option-{{ ai_gen_id }} {
+      max-width: 100%;
+    }
+
+    .ai-eligibility-form__navigation-{{ ai_gen_id }} {
+      flex-direction: column;
+    }
+
+    .ai-eligibility-form__nav-button-{{ ai_gen_id }} {
+      width: 100%;
+    }
+  }
+{% endstyle %}
+
+<eligibility-form-{{ ai_gen_id }}
+  class="ai-eligibility-form-{{ ai_gen_id }}"
+  {{ block.shopify_attributes }}
+  data-checkout-url="{{ block.settings.checkout_url }}"
+>
+  <div class="ai-eligibility-form__header-{{ ai_gen_id }}">
+    {% if block.settings.title != blank %}
+      <h2 class="ai-eligibility-form__title-{{ ai_gen_id }}">{{ block.settings.title }}</h2>
+    {% endif %}
+    {% if block.settings.subtitle != blank %}
+      <p class="ai-eligibility-form__subtitle-{{ ai_gen_id }}">{{ block.settings.subtitle }}</p>
+    {% endif %}
+  </div>
+
+  <div class="ai-eligibility-form__progress-{{ ai_gen_id }}">
+    <span class="ai-eligibility-form__progress-text-{{ ai_gen_id }}">
+      Question <span data-current-question>1</span> of 5
+    </span>
+  </div>
+
+  <div class="ai-eligibility-form__progress-bar-{{ ai_gen_id }}">
+    <div class="ai-eligibility-form__progress-fill-{{ ai_gen_id }}" data-progress-fill style="width: 20%;"></div>
+  </div>
+
+  <div class="ai-eligibility-form__question-container-{{ ai_gen_id }}">
+    {% for i in (1..5) %}
+      {% liquid
+        assign question_key = 'question_' | append: i
+        assign expected_key = 'expected_' | append: i
+        assign question_text = block.settings[question_key]
+        assign expected_answer = block.settings[expected_key]
+      %}
+
+      <div class="ai-eligibility-form__question-{{ ai_gen_id }} {% if i == 1 %}active{% endif %}" data-question="{{ i }}" data-expected="{{ expected_answer }}">
+        {% if question_text != blank %}
+          <h3 class="ai-eligibility-form__question-text-{{ ai_gen_id }}">{{ question_text }}</h3>
+        {% endif %}
+
+        <div class="ai-eligibility-form__options-{{ ai_gen_id }}">
+          <button
+            type="button"
+            class="ai-eligibility-form__option-{{ ai_gen_id }}"
+            data-answer="yes"
+          >
+            Yes
+          </button>
+          <button
+            type="button"
+            class="ai-eligibility-form__option-{{ ai_gen_id }}"
+            data-answer="no"
+          >
+            No
+          </button>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="ai-eligibility-form__navigation-{{ ai_gen_id }}">
+    <button
+      type="button"
+      class="ai-eligibility-form__nav-button-{{ ai_gen_id }} ai-eligibility-form__nav-button-{{ ai_gen_id }}--secondary"
+      data-nav-prev
+      disabled
+    >
+      Previous
+    </button>
+    <button
+      type="button"
+      class="ai-eligibility-form__nav-button-{{ ai_gen_id }}"
+      data-nav-next
+      disabled
+    >
+      Next
+    </button>
+  </div>
+
+  <div class="ai-eligibility-form__result-{{ ai_gen_id }} ai-eligibility-form__result-{{ ai_gen_id }}--eligible" data-result-eligible>
+    <div class="ai-eligibility-form__result-icon-{{ ai_gen_id }}">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="{{ block.settings.success_border_color }}" stroke-width="3">
+        <circle cx="32" cy="32" r="30"/>
+        <path d="M20 32l8 8 16-16" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <h3 class="ai-eligibility-form__result-title-{{ ai_gen_id }}">{{ block.settings.eligible_title }}</h3>
+    <div class="ai-eligibility-form__result-message-{{ ai_gen_id }}">{{ block.settings.eligible_message }}</div>
+    <a href="{{ block.settings.checkout_url }}" class="ai-eligibility-form__checkout-button-{{ ai_gen_id }}">
+      {{ block.settings.checkout_button_text }}
+    </a>
+    <br>
+    <button type="button" class="ai-eligibility-form__restart-button-{{ ai_gen_id }}" data-restart>
+      Restart questionnaire
+    </button>
+  </div>
+
+  <div class="ai-eligibility-form__result-{{ ai_gen_id }} ai-eligibility-form__result-{{ ai_gen_id }}--ineligible" data-result-ineligible>
+    <div class="ai-eligibility-form__result-icon-{{ ai_gen_id }}">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="{{ block.settings.error_border_color }}" stroke-width="3">
+        <circle cx="32" cy="32" r="30"/>
+        <path d="M22 22l20 20M42 22l-20 20" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <h3 class="ai-eligibility-form__result-title-{{ ai_gen_id }}">{{ block.settings.ineligible_title }}</h3>
+    <div class="ai-eligibility-form__result-message-{{ ai_gen_id }}">{{ block.settings.ineligible_message }}</div>
+    {% if block.settings.support_link != blank %}
+      <a href="{{ block.settings.support_link }}" class="ai-eligibility-form__checkout-button-{{ ai_gen_id }}">
+        {{ block.settings.support_button_text }}
+      </a>
+      <br>
+    {% endif %}
+    <button type="button" class="ai-eligibility-form__restart-button-{{ ai_gen_id }}" data-restart>
+      Restart questionnaire
+    </button>
+  </div>
+</eligibility-form-{{ ai_gen_id }}>
+
+<script>
+  (function() {
+    class EligibilityForm{{ ai_gen_id }} extends HTMLElement {
+      constructor() {
+        super();
+        this.currentQuestion = 1;
+        this.totalQuestions = 5;
+        this.answers = {};
+        this.storageKey = 'eligibility_form_{{ ai_gen_id }}_answers';
+      }
+
+      connectedCallback() {
+        this.questions = this.querySelectorAll('[data-question]');
+        this.prevButton = this.querySelector('[data-nav-prev]');
+        this.nextButton = this.querySelector('[data-nav-next]');
+        this.progressFill = this.querySelector('[data-progress-fill]');
+        this.currentQuestionText = this.querySelector('[data-current-question]');
+        this.eligibleResult = this.querySelector('[data-result-eligible]');
+        this.ineligibleResult = this.querySelector('[data-result-ineligible]');
+        this.restartButtons = this.querySelectorAll('[data-restart]');
+
+        this.loadAnswers();
+        this.setupEventListeners();
+        this.updateUI();
+      }
+
+      loadAnswers() {
+        try {
+          const stored = sessionStorage.getItem(this.storageKey);
+          if (stored) {
+            this.answers = JSON.parse(stored);
+            const lastAnswered = Math.max(...Object.keys(this.answers).map(Number));
+            if (lastAnswered > 0) {
+              this.currentQuestion = Math.min(lastAnswered + 1, this.totalQuestions);
+            }
+          }
+        } catch (e) {
+          this.answers = {};
+        }
+      }
+
+      saveAnswers() {
+        try {
+          sessionStorage.setItem(this.storageKey, JSON.stringify(this.answers));
+        } catch (e) {
+          console.error('Failed to save answers');
+        }
+      }
+
+      setupEventListeners() {
+        this.questions.forEach((question) => {
+          const options = question.querySelectorAll('[data-answer]');
+          options.forEach((option) => {
+            option.addEventListener('click', () => {
+              const questionNum = parseInt(question.dataset.question);
+              const answer = option.dataset.answer;
+
+              options.forEach((opt) => opt.classList.remove('selected'));
+              option.classList.add('selected');
+
+              this.answers[questionNum] = answer;
+              this.saveAnswers();
+              this.updateUI();
+
+              if (questionNum < this.totalQuestions) {
+                setTimeout(() => {
+                  this.nextQuestion();
+                }, 300);
+              } else {
+                setTimeout(() => {
+                  this.showResults();
+                }, 300);
+              }
+            });
+          });
+        });
+
+        this.prevButton.addEventListener('click', () => this.prevQuestion());
+        this.nextButton.addEventListener('click', () => this.nextQuestion());
+
+        this.restartButtons.forEach((button) => {
+          button.addEventListener('click', () => this.restart());
+        });
+      }
+
+      updateUI() {
+        this.questions.forEach((question, index) => {
+          const questionNum = index + 1;
+          question.classList.toggle('active', questionNum === this.currentQuestion);
+
+          const options = question.querySelectorAll('[data-answer]');
+          options.forEach((option) => {
+            const isSelected = this.answers[questionNum] === option.dataset.answer;
+            option.classList.toggle('selected', isSelected);
+          });
+        });
+
+        this.prevButton.disabled = this.currentQuestion === 1;
+        this.nextButton.disabled = !this.answers[this.currentQuestion];
+
+        const progress = (this.currentQuestion / this.totalQuestions) * 100;
+        this.progressFill.style.width = progress + '%';
+        this.currentQuestionText.textContent = this.currentQuestion;
+      }
+
+      nextQuestion() {
+        if (this.currentQuestion < this.totalQuestions) {
+          this.currentQuestion++;
+          this.updateUI();
+        }
+      }
+
+      prevQuestion() {
+        if (this.currentQuestion > 1) {
+          this.currentQuestion--;
+          this.updateUI();
+        }
+      }
+
+      showResults() {
+        const isEligible = this.checkEligibility();
+
+        this.querySelector('.ai-eligibility-form__question-container-{{ ai_gen_id }}').style.display = 'none';
+        this.querySelector('.ai-eligibility-form__navigation-{{ ai_gen_id }}').style.display = 'none';
+        this.querySelector('.ai-eligibility-form__progress-{{ ai_gen_id }}').style.display = 'none';
+        this.querySelector('.ai-eligibility-form__progress-bar-{{ ai_gen_id }}').style.display = 'none';
+
+        if (isEligible) {
+          this.eligibleResult.classList.add('active');
+          this.saveToCart(true);
+        } else {
+          this.ineligibleResult.classList.add('active');
+          this.saveToCart(false);
+        }
+      }
+
+      checkEligibility() {
+        let eligible = true;
+        this.questions.forEach((question) => {
+          const questionNum = parseInt(question.dataset.question);
+          const expectedAnswer = question.dataset.expected;
+          const userAnswer = this.answers[questionNum];
+
+          if (expectedAnswer && userAnswer !== expectedAnswer) {
+            eligible = false;
+          }
+        });
+        return eligible;
+      }
+
+      saveToCart(isEligible) {
+        const answersString = Object.entries(this.answers)
+          .map(([q, a]) => `Q${q}: ${a}`)
+          .join(', ');
+
+        fetch('/cart/update.js', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            attributes: {
+              'Eligibility Check': isEligible ? 'Eligible' : 'Not Eligible',
+              'Eligibility Answers': answersString,
+              'Eligibility Date': new Date().toISOString()
+            }
+          })
+        }).catch((error) => {
+          console.error('Failed to save eligibility to cart:', error);
+        });
+      }
+
+      restart() {
+        this.currentQuestion = 1;
+        this.answers = {};
+        sessionStorage.removeItem(this.storageKey);
+
+        this.querySelector('.ai-eligibility-form__question-container-{{ ai_gen_id }}').style.display = 'block';
+        this.querySelector('.ai-eligibility-form__navigation-{{ ai_gen_id }}').style.display = 'flex';
+        this.querySelector('.ai-eligibility-form__progress-{{ ai_gen_id }}').style.display = 'flex';
+        this.querySelector('.ai-eligibility-form__progress-bar-{{ ai_gen_id }}').style.display = 'block';
+
+        this.eligibleResult.classList.remove('active');
+        this.ineligibleResult.classList.remove('active');
+
+        this.updateUI();
+      }
+    }
+
+    customElements.define('eligibility-form-{{ ai_gen_id }}', EligibilityForm{{ ai_gen_id }});
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Pre-checkout eligibility",
+  "tag": null,
+  "settings": [
+    {
+      "type": "header",
+      "content": "General"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Title",
+      "default": "Eligibility Check"
+    },
+    {
+      "type": "text",
+      "id": "subtitle",
+      "label": "Subtitle",
+      "default": "Please answer these questions to verify your eligibility"
+    },
+    {
+      "type": "url",
+      "id": "checkout_url",
+      "label": "Checkout URL"
+    },
+    {
+      "type": "range",
+      "id": "desktop_width_percent",
+      "label": "Desktop width",
+      "min": 50,
+      "max": 100,
+      "step": 5,
+      "unit": "%",
+      "default": 100
+    },
+    {
+      "type": "header",
+      "content": "Questions"
+    },
+    {
+      "type": "text",
+      "id": "question_1",
+      "label": "Question 1",
+      "default": "Are you 18 years or older?"
+    },
+    {
+      "type": "select",
+      "id": "expected_1",
+      "label": "Expected answer for Q1",
+      "options": [
+        { "value": "yes", "label": "Yes" },
+        { "value": "no", "label": "No" }
+      ],
+      "default": "yes"
+    },
+    {
+      "type": "text",
+      "id": "question_2",
+      "label": "Question 2",
+      "default": "Do you have a valid prescription?"
+    },
+    {
+      "type": "select",
+      "id": "expected_2",
+      "label": "Expected answer for Q2",
+      "options": [
+        { "value": "yes", "label": "Yes" },
+        { "value": "no", "label": "No" }
+      ],
+      "default": "yes"
+    },
+    {
+      "type": "text",
+      "id": "question_3",
+      "label": "Question 3",
+      "default": "Are you currently pregnant or breastfeeding?"
+    },
+    {
+      "type": "select",
+      "id": "expected_3",
+      "label": "Expected answer for Q3",
+      "options": [
+        { "value": "yes", "label": "Yes" },
+        { "value": "no", "label": "No" }
+      ],
+      "default": "no"
+    },
+    {
+      "type": "text",
+      "id": "question_4",
+      "label": "Question 4",
+      "default": "Do you have any known allergies to the product ingredients?"
+    },
+    {
+      "type": "select",
+      "id": "expected_4",
+      "label": "Expected answer for Q4",
+      "options": [
+        { "value": "yes", "label": "Yes" },
+        { "value": "no", "label": "No" }
+      ],
+      "default": "no"
+    },
+    {
+      "type": "text",
+      "id": "question_5",
+      "label": "Question 5",
+      "default": "Have you consulted with a healthcare professional?"
+    },
+    {
+      "type": "select",
+      "id": "expected_5",
+      "label": "Expected answer for Q5",
+      "options": [
+        { "value": "yes", "label": "Yes" },
+        { "value": "no", "label": "No" }
+      ],
+      "default": "yes"
+    },
+    {
+      "type": "header",
+      "content": "Eligible result"
+    },
+    {
+      "type": "text",
+      "id": "eligible_title",
+      "label": "Title",
+      "default": "You're Eligible!"
+    },
+    {
+      "type": "richtext",
+      "id": "eligible_message",
+      "label": "Message",
+      "default": "<p>Based on your answers, you are eligible to purchase this product. You may proceed to checkout.</p>"
+    },
+    {
+      "type": "text",
+      "id": "checkout_button_text",
+      "label": "Checkout button text",
+      "default": "Continue to Checkout"
+    },
+    {
+      "type": "header",
+      "content": "Ineligible result"
+    },
+    {
+      "type": "text",
+      "id": "ineligible_title",
+      "label": "Title",
+      "default": "Not Eligible"
+    },
+    {
+      "type": "richtext",
+      "id": "ineligible_message",
+      "label": "Message",
+      "default": "<p>Based on your answers, you are not eligible to purchase this product online. If you believe this is incorrect, please contact our support team.</p>"
+    },
+    {
+      "type": "url",
+      "id": "support_link",
+      "label": "Support link"
+    },
+    {
+      "type": "text",
+      "id": "support_button_text",
+      "label": "Support button text",
+      "default": "Contact Support"
+    },
+    {
+      "type": "header",
+      "content": "Colors"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text",
+      "default": "#1c1c1c"
+    },
+    {
+      "type": "color",
+      "id": "progress_bg_color",
+      "label": "Progress bar background",
+      "default": "#efefef"
+    },
+    {
+      "type": "color",
+      "id": "progress_fill_color",
+      "label": "Progress bar fill",
+      "default": "#1c1c1c"
+    },
+    {
+      "type": "color",
+      "id": "option_bg_color",
+      "label": "Option background",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "option_border_color",
+      "label": "Option border",
+      "default": "#cccccc"
+    },
+    {
+      "type": "color",
+      "id": "option_hover_bg_color",
+      "label": "Option hover background",
+      "default": "#f5f5f5"
+    },
+    {
+      "type": "color",
+      "id": "option_hover_border_color",
+      "label": "Option hover border",
+      "default": "#1c1c1c"
+    },
+    {
+      "type": "color",
+      "id": "option_selected_bg_color",
+      "label": "Option selected background",
+      "default": "#1c1c1c"
+    },
+    {
+      "type": "color",
+      "id": "option_selected_border_color",
+      "label": "Option selected border",
+      "default": "#1c1c1c"
+    },
+    {
+      "type": "color",
+      "id": "option_selected_text_color",
+      "label": "Option selected text",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "button_bg_color",
+      "label": "Button background",
+      "default": "#1c1c1c"
+    },
+    {
+      "type": "color",
+      "id": "button_text_color",
+      "label": "Button text",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "button_hover_bg_color",
+      "label": "Button hover background",
+      "default": "#000000"
+    },
+    {
+      "type": "color",
+      "id": "checkout_button_bg_color",
+      "label": "Checkout button background",
+      "default": "#307a07"
+    },
+    {
+      "type": "color",
+      "id": "checkout_button_text_color",
+      "label": "Checkout button text",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "checkout_button_hover_bg_color",
+      "label": "Checkout button hover background",
+      "default": "#256005"
+    },
+    {
+      "type": "color",
+      "id": "success_bg_color",
+      "label": "Success background",
+      "default": "#e8f5e9"
+    },
+    {
+      "type": "color",
+      "id": "success_border_color",
+      "label": "Success border",
+      "default": "#307a07"
+    },
+    {
+      "type": "color",
+      "id": "error_bg_color",
+      "label": "Error background",
+      "default": "#ffebee"
+    },
+    {
+      "type": "color",
+      "id": "error_border_color",
+      "label": "Error border",
+      "default": "#cb2b2b"
+    },
+    {
+      "type": "header",
+      "content": "Style"
+    },
+    {
+      "type": "range",
+      "id": "border_radius",
+      "label": "Border radius",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 8
+    },
+    {
+      "type": "range",
+      "id": "option_border_radius",
+      "label": "Option border radius",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 8
+    },
+    {
+      "type": "range",
+      "id": "button_border_radius",
+      "label": "Button border radius",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 4
+    },
+    {
+      "type": "range",
+      "id": "title_size",
+      "label": "Title size",
+      "min": 16,
+      "max": 48,
+      "step": 2,
+      "unit": "px",
+      "default": 32
+    },
+    {
+      "type": "range",
+      "id": "subtitle_size",
+      "label": "Subtitle size",
+      "min": 12,
+      "max": 24,
+      "step": 1,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "question_size",
+      "label": "Question size",
+      "min": 16,
+      "max": 32,
+      "step": 2,
+      "unit": "px",
+      "default": 20
+    }
+  ],
+  "presets": [
+    {
+      "name": "Pre-checkout eligibility"
+    }
+  ]
+}
+{% endschema %}

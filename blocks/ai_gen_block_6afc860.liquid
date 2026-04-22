@@ -1,0 +1,690 @@
+{% doc %}
+  @prompt
+    A toggle button that asks the user if the provided information is still the same. Below the toggle, there will be 2 buttons: one that says "Proceed to Checkout" if the toggle button is "Yes," and another that says "Update Medical Check." if customer is sign in if not show sign in and hide the toggle  and proceed to check out button.  If customer already signed in hide sign in button, control section alignment. Add instruction above button that states user needs to sign in to be able to check out an d make sure that the Medical check form was submitted. check customer tags if there is red flag or green flag all to add ctom message for either. If there are no tags show message " Please submit the  medical check form.  According to the tags the red flag doesn't see proceed to check out button. By default the toogle should be on
+    
+    Instead of link for Update Medical Info please use this <div class="upform-container" style="display: none !important;" data-id="a6e76e"></div> or have a liquid block for me to add the code, add button size controls, make buttons smaller in width size
+{% enddoc %}
+{% assign ai_gen_id = block.id | replace: '_', '' | downcase %}
+
+{% style %}
+  .ai-checkout-gate-{{ ai_gen_id }} {
+    width: {{ block.settings.desktop_width_percent }}%;
+    max-width: 100%;
+    padding: {{ block.settings.container_padding }}px;
+    background-color: {{ block.settings.background_color }};
+    border-radius: {{ block.settings.border_radius }}px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    text-align: {{ block.settings.alignment }};
+    align-items: {{ block.settings.alignment }};
+  }
+
+  .ai-checkout-gate__message-{{ ai_gen_id }} {
+    color: {{ block.settings.text_color }};
+    font-size: {{ block.settings.message_font_size }}px;
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  .ai-checkout-gate__status-message-{{ ai_gen_id }} {
+    padding: 16px 20px;
+    border-radius: {{ block.settings.message_border_radius }}px;
+    font-size: {{ block.settings.status_font_size }}px;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .ai-checkout-gate__status-message-{{ ai_gen_id }}--info {
+    background-color: {{ block.settings.info_bg_color }};
+    color: {{ block.settings.info_text_color }};
+  }
+
+  .ai-checkout-gate__status-message-{{ ai_gen_id }}--success {
+    background-color: {{ block.settings.success_bg_color }};
+    color: {{ block.settings.success_text_color }};
+  }
+
+  .ai-checkout-gate__status-message-{{ ai_gen_id }}--warning {
+    background-color: {{ block.settings.warning_bg_color }};
+    color: {{ block.settings.warning_text_color }};
+  }
+
+  .ai-checkout-gate__toggle-section-{{ ai_gen_id }} {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .ai-checkout-gate__toggle-wrapper-{{ ai_gen_id }} {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    justify-content: {{ block.settings.alignment }};
+  }
+
+  .ai-checkout-gate__toggle-label-{{ ai_gen_id }} {
+    font-size: {{ block.settings.toggle_label_size }}px;
+    color: {{ block.settings.text_color }};
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .ai-checkout-gate__toggle-{{ ai_gen_id }} {
+    position: relative;
+    width: 60px;
+    height: 32px;
+    background-color: {{ block.settings.toggle_active_color }};
+    border-radius: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    border: none;
+    padding: 0;
+  }
+
+  .ai-checkout-gate__toggle-{{ ai_gen_id }}[aria-checked="false"] {
+    background-color: {{ block.settings.toggle_inactive_color }};
+  }
+
+  .ai-checkout-gate__toggle-slider-{{ ai_gen_id }} {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: 24px;
+    height: 24px;
+    background-color: #ffffff;
+    border-radius: 50%;
+    transition: transform 0.3s ease;
+    pointer-events: none;
+  }
+
+  .ai-checkout-gate__toggle-{{ ai_gen_id }}[aria-checked="true"] .ai-checkout-gate__toggle-slider-{{ ai_gen_id }} {
+    transform: translateX(28px);
+  }
+
+  .ai-checkout-gate__buttons-{{ ai_gen_id }} {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .ai-checkout-gate__button-{{ ai_gen_id }} {
+    padding: {{ block.settings.button_padding }}px {{ block.settings.button_padding | times: 1.5 }}px;
+    border-radius: {{ block.settings.button_border_radius }}px;
+    font-size: {{ block.settings.button_font_size }}px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+    {% if block.settings.button_width == 'full' %}
+      width: 100%;
+    {% elsif block.settings.button_width == 'auto' %}
+      width: auto;
+      align-self: {{ block.settings.alignment }};
+    {% else %}
+      width: {{ block.settings.button_width_custom }}%;
+      align-self: {{ block.settings.alignment }};
+    {% endif %}
+  }
+
+  .ai-checkout-gate__button-{{ ai_gen_id }}--primary {
+    background-color: {{ block.settings.primary_button_bg }};
+    color: {{ block.settings.primary_button_text }};
+  }
+
+  .ai-checkout-gate__button-{{ ai_gen_id }}--primary:hover {
+    background-color: {{ block.settings.primary_button_hover_bg }};
+    color: {{ block.settings.primary_button_hover_text }};
+  }
+
+  .ai-checkout-gate__button-{{ ai_gen_id }}--secondary {
+    background-color: {{ block.settings.secondary_button_bg }};
+    color: {{ block.settings.secondary_button_text }};
+  }
+
+  .ai-checkout-gate__button-{{ ai_gen_id }}--secondary:hover {
+    background-color: {{ block.settings.secondary_button_hover_bg }};
+    color: {{ block.settings.secondary_button_hover_text }};
+  }
+
+  .ai-checkout-gate__hidden-{{ ai_gen_id }} {
+    display: none !important;
+  }
+
+  .ai-checkout-gate__form-container-{{ ai_gen_id }} {
+    width: 100%;
+  }
+
+  @media screen and (max-width: 749px) {
+    .ai-checkout-gate-{{ ai_gen_id }} {
+      width: 100%;
+      padding: {{ block.settings.container_padding | times: 0.75 }}px;
+    }
+
+    .ai-checkout-gate__message-{{ ai_gen_id }} {
+      font-size: {{ block.settings.message_font_size | times: 0.9 }}px;
+    }
+
+    .ai-checkout-gate__status-message-{{ ai_gen_id }} {
+      font-size: {{ block.settings.status_font_size | times: 0.9 }}px;
+    }
+
+    .ai-checkout-gate__button-{{ ai_gen_id }} {
+      {% if block.settings.button_width_mobile == 'full' %}
+        width: 100%;
+      {% elsif block.settings.button_width_mobile == 'auto' %}
+        width: auto;
+      {% endif %}
+    }
+  }
+{% endstyle %}
+
+<checkout-gate-{{ ai_gen_id }}
+  class="ai-checkout-gate-{{ ai_gen_id }}"
+  data-customer-logged-in="{{ customer }}"
+  data-customer-tags="{{ customer.tags | join: ',' }}"
+  {{ block.shopify_attributes }}
+>
+  {% if customer %}
+    {% assign has_green_flag = false %}
+    {% assign has_red_flag = false %}
+    {% assign has_any_tag = false %}
+
+    {% for tag in customer.tags %}
+      {% assign tag_lower = tag | downcase %}
+      {% if tag_lower contains 'green' or tag_lower contains 'auto-clear' or tag_lower contains 'autoclear' %}
+        {% assign has_green_flag = true %}
+        {% assign has_any_tag = true %}
+      {% endif %}
+      {% if tag_lower contains 'red' or tag_lower contains 'flag' %}
+        {% assign has_red_flag = true %}
+        {% assign has_any_tag = true %}
+      {% endif %}
+    {% endfor %}
+
+    {% if has_any_tag == false %}
+      <div class="ai-checkout-gate__status-message-{{ ai_gen_id }} ai-checkout-gate__status-message-{{ ai_gen_id }}--warning">
+        {{ block.settings.no_tags_message }}
+      </div>
+    {% elsif has_green_flag %}
+      <div class="ai-checkout-gate__status-message-{{ ai_gen_id }} ai-checkout-gate__status-message-{{ ai_gen_id }}--success">
+        {{ block.settings.green_flag_message }}
+      </div>
+    {% elsif has_red_flag %}
+      <div class="ai-checkout-gate__status-message-{{ ai_gen_id }} ai-checkout-gate__status-message-{{ ai_gen_id }}--warning">
+        {{ block.settings.red_flag_message }}
+      </div>
+    {% endif %}
+
+    <div class="ai-checkout-gate__toggle-section-{{ ai_gen_id }} {% if has_any_tag == false %}ai-checkout-gate__hidden-{{ ai_gen_id }}{% endif %}" data-toggle-section>
+      <div class="ai-checkout-gate__toggle-wrapper-{{ ai_gen_id }}">
+        <span class="ai-checkout-gate__toggle-label-{{ ai_gen_id }}">{{ block.settings.toggle_label }}</span>
+        <button
+          type="button"
+          role="switch"
+          aria-checked="true"
+          class="ai-checkout-gate__toggle-{{ ai_gen_id }}"
+          data-toggle
+        >
+          <span class="ai-checkout-gate__toggle-slider-{{ ai_gen_id }}"></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="ai-checkout-gate__buttons-{{ ai_gen_id }}">
+      {% if has_red_flag == false %}
+        <a
+          href="/checkout"
+          class="ai-checkout-gate__button-{{ ai_gen_id }} ai-checkout-gate__button-{{ ai_gen_id }}--primary {% if has_any_tag == false %}ai-checkout-gate__hidden-{{ ai_gen_id }}{% endif %}"
+          data-checkout-button
+        >
+          {{ block.settings.checkout_button_text }}
+        </a>
+      {% endif %}
+
+      <div class="ai-checkout-gate__form-container-{{ ai_gen_id }} ai-checkout-gate__hidden-{{ ai_gen_id }}" data-update-form>
+        {% if block.settings.custom_form_code != blank %}
+          {{ block.settings.custom_form_code }}
+        {% else %}
+          <div class="upform-container" style="display: none !important;" data-id="a6e76e"></div>
+        {% endif %}
+      </div>
+    </div>
+
+  {% else %}
+    <div class="ai-checkout-gate__message-{{ ai_gen_id }}">
+      {{ block.settings.signin_instruction }}
+    </div>
+
+    <div class="ai-checkout-gate__buttons-{{ ai_gen_id }}">
+      <a
+        href="/account/login"
+        class="ai-checkout-gate__button-{{ ai_gen_id }} ai-checkout-gate__button-{{ ai_gen_id }}--secondary"
+      >
+        {{ block.settings.signin_button_text }}
+      </a>
+    </div>
+  {% endif %}
+</checkout-gate-{{ ai_gen_id }}>
+
+<script>
+  (function() {
+    class CheckoutGate{{ ai_gen_id }} extends HTMLElement {
+      constructor() {
+        super();
+        this.toggle = this.querySelector('[data-toggle]');
+        this.checkoutButton = this.querySelector('[data-checkout-button]');
+        this.updateForm = this.querySelector('[data-update-form]');
+        this.toggleSection = this.querySelector('[data-toggle-section]');
+      }
+
+      connectedCallback() {
+        if (this.toggle) {
+          this.toggle.addEventListener('click', this.handleToggle.bind(this));
+        }
+      }
+
+      handleToggle() {
+        const isChecked = this.toggle.getAttribute('aria-checked') === 'true';
+        const newState = !isChecked;
+
+        this.toggle.setAttribute('aria-checked', newState);
+
+        if (newState) {
+          if (this.checkoutButton) {
+            this.checkoutButton.classList.remove('ai-checkout-gate__hidden-{{ ai_gen_id }}');
+          }
+          if (this.updateForm) {
+            this.updateForm.classList.add('ai-checkout-gate__hidden-{{ ai_gen_id }}');
+          }
+        } else {
+          if (this.checkoutButton) {
+            this.checkoutButton.classList.add('ai-checkout-gate__hidden-{{ ai_gen_id }}');
+          }
+          if (this.updateForm) {
+            this.updateForm.classList.remove('ai-checkout-gate__hidden-{{ ai_gen_id }}');
+          }
+        }
+      }
+    }
+
+    customElements.define('checkout-gate-{{ ai_gen_id }}', CheckoutGate{{ ai_gen_id }});
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Checkout eligibility gate",
+  "tag": null,
+  "settings": [
+    {
+      "type": "header",
+      "content": "Layout"
+    },
+    {
+      "type": "range",
+      "id": "desktop_width_percent",
+      "label": "Desktop width",
+      "min": 50,
+      "max": 100,
+      "step": 5,
+      "unit": "%",
+      "default": 100
+    },
+    {
+      "type": "select",
+      "id": "alignment",
+      "label": "Alignment",
+      "options": [
+        {
+          "value": "flex-start",
+          "label": "Left"
+        },
+        {
+          "value": "center",
+          "label": "Center"
+        },
+        {
+          "value": "flex-end",
+          "label": "Right"
+        }
+      ],
+      "default": "center"
+    },
+    {
+      "type": "range",
+      "id": "container_padding",
+      "label": "Container padding",
+      "min": 0,
+      "max": 60,
+      "step": 4,
+      "unit": "px",
+      "default": 32
+    },
+    {
+      "type": "range",
+      "id": "border_radius",
+      "label": "Border radius",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 8
+    },
+    {
+      "type": "header",
+      "content": "Colors"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text",
+      "default": "#1c1c1c"
+    },
+    {
+      "type": "header",
+      "content": "Messages"
+    },
+    {
+      "type": "richtext",
+      "id": "signin_instruction",
+      "label": "Sign in instruction",
+      "default": "<p>Please sign in to proceed. You must be logged in and have completed the medical check form to access checkout.</p>"
+    },
+    {
+      "type": "richtext",
+      "id": "no_tags_message",
+      "label": "No tags message",
+      "default": "<p>Please submit the medical check form before proceeding to checkout.</p>"
+    },
+    {
+      "type": "richtext",
+      "id": "green_flag_message",
+      "label": "Green flag message",
+      "default": "<p>Your medical check has been approved. You may proceed to checkout.</p>"
+    },
+    {
+      "type": "richtext",
+      "id": "red_flag_message",
+      "label": "Red flag message",
+      "default": "<p>Your medical check requires review. Please contact our team before proceeding.</p>"
+    },
+    {
+      "type": "range",
+      "id": "message_font_size",
+      "label": "Message font size",
+      "min": 12,
+      "max": 24,
+      "step": 1,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "status_font_size",
+      "label": "Status font size",
+      "min": 12,
+      "max": 24,
+      "step": 1,
+      "unit": "px",
+      "default": 14
+    },
+    {
+      "type": "range",
+      "id": "message_border_radius",
+      "label": "Status message radius",
+      "min": 0,
+      "max": 20,
+      "step": 2,
+      "unit": "px",
+      "default": 6
+    },
+    {
+      "type": "header",
+      "content": "Status colors"
+    },
+    {
+      "type": "color",
+      "id": "info_bg_color",
+      "label": "Info background",
+      "default": "#e3f2fd"
+    },
+    {
+      "type": "color",
+      "id": "info_text_color",
+      "label": "Info text",
+      "default": "#0d47a1"
+    },
+    {
+      "type": "color",
+      "id": "success_bg_color",
+      "label": "Success background",
+      "default": "#e8f5e9"
+    },
+    {
+      "type": "color",
+      "id": "success_text_color",
+      "label": "Success text",
+      "default": "#1b5e20"
+    },
+    {
+      "type": "color",
+      "id": "warning_bg_color",
+      "label": "Warning background",
+      "default": "#fff3e0"
+    },
+    {
+      "type": "color",
+      "id": "warning_text_color",
+      "label": "Warning text",
+      "default": "#e65100"
+    },
+    {
+      "type": "header",
+      "content": "Toggle"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "toggle_label",
+      "label": "Toggle label",
+      "default": "Is your medical information still the same?"
+    },
+    {
+      "type": "range",
+      "id": "toggle_label_size",
+      "label": "Label font size",
+      "min": 12,
+      "max": 20,
+      "step": 1,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "color",
+      "id": "toggle_active_color",
+      "label": "Active color",
+      "default": "#4caf50"
+    },
+    {
+      "type": "color",
+      "id": "toggle_inactive_color",
+      "label": "Inactive color",
+      "default": "#cccccc"
+    },
+    {
+      "type": "header",
+      "content": "Buttons"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "checkout_button_text",
+      "label": "Checkout button text",
+      "default": "Proceed to Checkout"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "signin_button_text",
+      "label": "Sign in button text",
+      "default": "Sign In"
+    },
+    {
+      "type": "range",
+      "id": "button_font_size",
+      "label": "Font size",
+      "min": 12,
+      "max": 24,
+      "step": 1,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "button_padding",
+      "label": "Padding",
+      "min": 8,
+      "max": 24,
+      "step": 2,
+      "unit": "px",
+      "default": 14
+    },
+    {
+      "type": "range",
+      "id": "button_border_radius",
+      "label": "Border radius",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 4
+    },
+    {
+      "type": "select",
+      "id": "button_width",
+      "label": "Button width on desktop",
+      "options": [
+        {
+          "value": "full",
+          "label": "Full width"
+        },
+        {
+          "value": "auto",
+          "label": "Auto width"
+        },
+        {
+          "value": "custom",
+          "label": "Custom width"
+        }
+      ],
+      "default": "custom"
+    },
+    {
+      "type": "range",
+      "id": "button_width_custom",
+      "label": "Custom button width",
+      "min": 20,
+      "max": 100,
+      "step": 5,
+      "unit": "%",
+      "default": 40
+    },
+    {
+      "type": "select",
+      "id": "button_width_mobile",
+      "label": "Button width on mobile",
+      "options": [
+        {
+          "value": "full",
+          "label": "Full width"
+        },
+        {
+          "value": "auto",
+          "label": "Auto width"
+        }
+      ],
+      "default": "full"
+    },
+    {
+      "type": "header",
+      "content": "Primary button"
+    },
+    {
+      "type": "color",
+      "id": "primary_button_bg",
+      "label": "Background",
+      "default": "#b29964"
+    },
+    {
+      "type": "color",
+      "id": "primary_button_text",
+      "label": "Text",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "primary_button_hover_bg",
+      "label": "Hover background",
+      "default": "#9a8355"
+    },
+    {
+      "type": "color",
+      "id": "primary_button_hover_text",
+      "label": "Hover text",
+      "default": "#ffffff"
+    },
+    {
+      "type": "header",
+      "content": "Secondary button"
+    },
+    {
+      "type": "color",
+      "id": "secondary_button_bg",
+      "label": "Background",
+      "default": "#1c1c1c"
+    },
+    {
+      "type": "color",
+      "id": "secondary_button_text",
+      "label": "Text",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "secondary_button_hover_bg",
+      "label": "Hover background",
+      "default": "#333333"
+    },
+    {
+      "type": "color",
+      "id": "secondary_button_hover_text",
+      "label": "Hover text",
+      "default": "#ffffff"
+    },
+    {
+      "type": "header",
+      "content": "Medical form"
+    },
+    {
+      "type": "html",
+      "id": "custom_form_code",
+      "label": "Custom form code",
+      "info": "Add your medical form embed code here. Leave blank to use default upform container."
+    }
+  ],
+  "presets": [
+    {
+      "name": "Checkout eligibility gate"
+    }
+  ]
+}
+{% endschema %}
