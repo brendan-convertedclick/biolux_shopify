@@ -33,8 +33,7 @@
                 {%- endcapture -%}
 
                 {%- form 'customer_login', class: 'form' -%}
-                  <input type="hidden" name="checkout_url" value="/cart">
-                 
+                  <input type="hidden" name="checkout_url" value="{{ block.settings.return_to | default: routes.account_url }}">
 
                   <div class="fieldset">
                     {%- if form.errors -%}
